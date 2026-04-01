@@ -1,0 +1,14 @@
+# Normalize line endings to LF for consistency across platforms
+* text=auto
+
+# Text files
+*.md text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.cs text eol=lf
+
+# Binary files
+*.dll binary
+*.exe binary

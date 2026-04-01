@@ -1,0 +1,61 @@
+{
+  "version": "1",
+  "plugins": [
+    {
+      "id": "dotnet-coding-conventions",
+      "name": "dotnet-coding-conventions",
+      "description": "Teaches Claude idiomatic C# conventions—null guards, collection initializers, logging, braces, using directives. The nits you'd get a brain splinter fixing in code review.",
+      "source": {
+        "path": "./.claude/skills/dotnet-coding-conventions"
+      }
+    },
+    {
+      "id": "documenting-csharp-code",
+      "name": "documenting-csharp-code",
+      "description": "Keeps Claude from writing verbose XML docs. Enforces concise, one-sentence summaries focused on contract over implementation.",
+      "source": {
+        "path": "./.claude/skills/documenting-csharp-code"
+      }
+    },
+    {
+      "id": "testing-xunit-effectively",
+      "name": "testing-xunit-effectively",
+      "description": "Stops Claude from writing ten identical tests. Enforces behavior-driven testing with [Theory] to eliminate duplication.",
+      "source": {
+        "path": "./.claude/skills/testing-xunit-effectively"
+      }
+    },
+    {
+      "id": "git-conventional-commits",
+      "name": "git-conventional-commits",
+      "description": "Enforces Conventional Commits spec. Makes commit messages explain intent, not just list files.",
+      "source": {
+        "path": "./.claude/skills/git-conventional-commits"
+      }
+    },
+    {
+      "id": "dotnet-ilspy",
+      "name": "dotnet-ilspy",
+      "description": "Teaches Claude to dnx peek at .NET source code instead of just web searching. See how the framework actually works inside.",
+      "source": {
+        "path": "./.claude/skills/dotnet-ilspy"
+      }
+    },
+    {
+      "id": "docs-mailchimp-voice",
+      "name": "docs-mailchimp-voice",
+      "description": "Rewrites robotic documentation to sound human. Clear, confident, helpful tone—like a teammate, not a textbook.",
+      "source": {
+        "path": "./.claude/skills/docs-mailchimp-voice"
+      }
+    },
+    {
+      "id": "dotnet-nswag",
+      "name": "dotnet-nswag",
+      "description": "Teaches Claude how to generate API clients from OpenAPI specs using dotnet dnx or nswag CLI. All the commands and flags.",
+      "source": {
+        "path": "./.claude/skills/dotnet-nswag"
+      }
+    }
+  ]
+}
