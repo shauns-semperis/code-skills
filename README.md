@@ -1,49 +1,68 @@
-# Claude Skills
+# code-skills
 
-Custom skills for Claude. Version-controlled and shareable.
-
-## Structure
-
-Each skill lives in `.claude/skills/skill-name/skill.md`. Claude auto-discovers them when working in this project.
-
-## Installation
-
-### Claude Code (Plugin Marketplace)
-
-Install directly from the plugin marketplace:
-
-```
-/plugin install code-skills
-```
-
-Or search and install via the interactive plugin manager:
-
-```
-/plugin
-```
-
-Go to **Discover**, search for `code-skills`, and click install. All skills are included in the package and auto-discovered immediately.
-
-## Adding Skills
-
-Create a new folder with a `skill.md` file:
-```
-.claude/skills/my-skill/skill.md
-```
-
-Commit and push. Done.
+Engineering skills for Claude Code — documentation writing, .NET coding conventions, xUnit testing, OpenAPI client generation, and git commit practices.
 
 ## Skills
 
-| Skill | What It Does |
-|-------|--------------|
-| **dotnet-coding-conventions** | The nits you'd see and get a brain splinter with during code review. Teaches the beep boops null guards, collection initializers, logging, braces, using directives—all the idiomatic C# stuff. |
-| **documenting-csharp-code** | Claude writes XML docs like it's getting paid by the word. This keeps it concise: one sentence, contract over implementation, actual useful docs. |
-| **testing-xunit-effectively** | Claude writes ten identical tests instead of one `[Theory]`, and tests how code works instead of what it does. This fixes both. |
-| **git-conventional-commits** | Claude's commit messages say "update auth" when they should explain why. This enforces real commit messages that tell a story. |
-| **dotnet-ilspy** | Teaches the sand how to dnx peek at source code since it typically prefers to just web search and make stuff up. See how .NET actually works inside. |
-| **docs-mailchimp-voice** | Claude writes like a textbook. This makes it write like a helpful teammate—clear, confident, human. |
-| **dotnet-nswag** | Teaches the beep boops how to generate API clients from OpenAPI specs using `dotnet dnx` or `nswag`—all the commands and flags, no guessing. |
+| Skill | What it does |
+|-------|-------------|
+| `git-conventional-commits` | Writes commit messages that explain *why* changes exist, following the Conventional Commits spec |
+| `docs-mailchimp-voice` | Reviews and rewrites public-facing documentation (READMEs, guides, changelogs) to sound human and helpful |
+| `documenting-csharp-code` | Enforces concise C# XML doc comments — one-sentence summaries, proper `<see cref="">` tags, no boilerplate |
+| `dotnet-coding-conventions` | Applies idiomatic C# 12+ conventions: null guards, collection expressions, logging with `[LoggerMessage]`, and more |
+| `dotnet-ilspy` | Decompiles .NET assemblies with ILSpy to inspect NuGet packages or framework internals |
+| `dotnet-nswag` | Generates typed API clients from OpenAPI/Swagger specs using `dotnet dnx` or the `nswag` CLI |
+| `testing-xunit-effectively` | Writes xUnit tests that verify public outcomes, not implementation details — with `[Theory]` for repeated patterns |
 
-See `.claude/skills/` for the full list.
+## Install
 
+### Marketplace install
+
+Add the marketplace, then install the plugin:
+
+```
+/plugin marketplace add shauns-semperis/code-skills
+/plugin install code-skills@code-skills
+/reload-plugins
+```
+
+### Local / development
+
+Clone the repo and load it directly with `--plugin-dir`:
+
+```bash
+git clone https://github.com/shauns-semperis/code-skills
+claude --plugin-dir /path/to/code-skills
+```
+
+### Team auto-install
+
+To prompt teammates to install when they open the project, add this to `.claude/settings.json`:
+
+```json
+{
+  "extraKnownMarketplaces": {
+    "code-skills": {
+      "source": {
+        "source": "github",
+        "repo": "shauns-semperis/code-skills"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "code-skills@code-skills": true
+  }
+}
+```
+
+## Usage
+
+Skills activate automatically when Claude recognises the context, or you can invoke them directly:
+
+```
+/code-skills:git-conventional-commits
+/code-skills:dotnet-coding-conventions
+/code-skills:testing-xunit-effectively
+```
+
+Run `/help` to see all available skills from the plugin.

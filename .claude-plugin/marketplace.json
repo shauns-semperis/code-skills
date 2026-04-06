@@ -3,14 +3,14 @@
   "owner": {
     "name": "shauns-semperis"
   },
+  "metadata": {
+    "description": "Engineering skills for developer workflow — documentation writing, .NET coding conventions, xUnit testing, OpenAPI client generation, and git commit practices."
+  },
   "plugins": [
     {
       "name": "code-skills",
-      "description": "Production-grade C# and .NET engineering skills — coding conventions, documentation, testing, commit practices, API client generation, and decompilation.",
-      "source": {
-        "source": "github",
-        "repo": "shauns-semperis/code-skills"
-      }
+      "source": "./",
+      "description": "Engineering skills for developer workflow — documentation writing, .NET coding conventions, xUnit testing, OpenAPI client generation, and git commit practices."
     }
   ]
 }

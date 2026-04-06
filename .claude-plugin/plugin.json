@@ -1,0 +1,9 @@
+{
+  "name": "code-skills",
+  "description": "Engineering skills for developer workflow — documentation writing, .NET coding conventions, xUnit testing, OpenAPI client generation, and git commit practices.",
+  "version": "1.0.0",
+  "author": {
+    "name": "shauns-semperis"
+  },
+  "repository": "https://github.com/shauns-semperis/code-skills"
+}
