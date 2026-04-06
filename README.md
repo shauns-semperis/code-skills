@@ -10,28 +10,19 @@ Each skill lives in `.claude/skills/skill-name/skill.md`. Claude auto-discovers 
 
 ### Claude Code (Plugin Marketplace)
 
-Add this repository as a marketplace in Claude Code:
+Install directly from the plugin marketplace:
 
 ```
-/plugin marketplace add shauns-semperis/code-skills
+/plugin install code-skills
 ```
 
-Then browse and install individual skills:
-
-```
-/plugin install dotnet-coding-conventions@code-skills
-/plugin install testing-xunit-effectively@code-skills
-```
-
-Or use the interactive plugin manager:
+Or search and install via the interactive plugin manager:
 
 ```
 /plugin
 ```
 
-Go to **Discover** to browse all available skills, then select and install.
-
-Skills are auto-discovered and available immediately.
+Go to **Discover**, search for `code-skills`, and click install. All skills are included in the package and auto-discovered immediately.
 
 ## Adding Skills
 
