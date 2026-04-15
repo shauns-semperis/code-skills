@@ -144,7 +144,48 @@ public void IsValid_InvalidEmails_ReturnsFalse(string email)
 
 ## Common Mistakes
 
-### Mistake 1: Testing Logging
+### Mistake 1: Test Names Include Fixture/Context Noise
+
+```csharp
+// ❌ BAD: Name locked to specific test data ("json-data")
+[Theory]
+[InlineData("{\"name\":\"Alice\"}")]
+[InlineData("{\"name\":\"Bob\"}")]
+public void Parse_JsonData_ReturnsUser(string json, string expectedName)
+{
+    var result = _parser.Parse(json);
+    
+    Assert.Equal(expectedName, result.Name);
+}
+
+// ❌ STILL BAD: Name includes fixture context ("WithJsonString")
+// Sounds like we're testing JSON-specific behavior, but we're testing deserialization generally
+[Theory]
+[InlineData("{\"name\":\"Alice\"}")]
+[InlineData("{\"name\":\"Bob\"}")]
+public void Parse_WithJsonString_ReturnsUser(string json, string expectedName)
+{
+    var result = _parser.Parse(json);
+    
+    Assert.Equal(expectedName, result.Name);
+}
+
+// ✅ GOOD: Name describes the actual behavior - correct deserialization
+// "JsonData" and "JsonString" are test fixtures. The actual behavior is parsing/deserializing.
+[Theory]
+[InlineData("{\"name\":\"Alice\"}")]
+[InlineData("{\"name\":\"Bob\"}")]
+public void Parse_ValidInput_ReturnsDeserializedObject(string json, string expectedName)
+{
+    var result = _parser.Parse(json);
+    
+    Assert.Equal(expectedName, result.Name);
+}
+```
+
+**Why:** Strip away fixture context from test names. The test data is already visible in `[InlineData]` — you don't need to repeat it. The method name should describe what behavior is verified, not the format or type of test data used.
+
+### Mistake 2: Testing Logging
 
 ```csharp
 // ❌ BAD: Fragile, tests implementation
@@ -156,7 +197,7 @@ Assert.Equal("expected error message", result.ErrorMessage);
 
 **Why:** If you switch logging frameworks or format, tests break even though behavior is correct.
 
-### Mistake 2: Testing Mock Calls
+### Mistake 3: Testing Mock Calls
 
 ```csharp
 // ❌ BAD: Verifies HOW method works
@@ -169,7 +210,7 @@ Assert.NotNull(order.ConfirmationNumber);
 
 **Why:** Tests should survive refactoring. If you change save mechanism, business behavior hasn't changed.
 
-### Mistake 3: Copy-Paste Instead of Theory
+### Mistake 4: Copy-Paste Instead of Theory
 
 ```csharp
 // ❌ BAD: Nine methods with identical logic
@@ -190,6 +231,7 @@ public void Test_AllCases(input) { /* shared logic */ }
 ## Red Flags - STOP and Reconsider
 
 If you're about to:
+- Name a test after test data or fixture values (`Evaluate_authz_allow_...` when "authz/allow" is the policy being evaluated)
 - Verify a mock was called (`mockService.Verify(...)`)
 - Test that a logger logged something
 - Mock `ILogger<T>` or `IOptions<T>` (use `NullLogger<T>.Instance` or `Options.Create(...)`)
