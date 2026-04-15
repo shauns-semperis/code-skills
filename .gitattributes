@@ -1,6 +1,13 @@
 # Normalize line endings to LF for consistency across platforms
 * text=auto
 
+# Ensure shell scripts always have LF line endings
+*.sh text eol=lf
+hooks/session-start text eol=lf
+
+# Ensure the polyglot wrapper keeps LF (it's parsed by both cmd and bash)
+*.cmd text eol=lf
+
 # Text files
 *.md text eol=lf
 *.txt text eol=lf
@@ -12,3 +19,6 @@
 # Binary files
 *.dll binary
 *.exe binary
+*.png binary
+*.jpg binary
+*.gif binary
