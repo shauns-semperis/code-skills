@@ -1,0 +1,23 @@
+{
+  "skill_name": "pandoc-docker",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "convert C:\\Users\\ShaunSmith\\code\\code-skills\\pandoc-docker-workspace\\test-files\\meeting-notes.md to a word doc",
+      "expected_output": "A .docx file created next to meeting-notes.md containing the same content (headings, table, blockquote preserved)",
+      "files": ["C:\\Users\\ShaunSmith\\code\\code-skills\\pandoc-docker-workspace\\test-files\\meeting-notes.md"]
+    },
+    {
+      "id": 2,
+      "prompt": "turn C:\\Users\\ShaunSmith\\code\\code-skills\\pandoc-docker-workspace\\test-files\\api-spec.html into markdown and put it in C:\\Users\\ShaunSmith\\code\\code-skills\\pandoc-docker-workspace\\test-files\\docs",
+      "expected_output": "A .md file created in the docs/ subdirectory with the HTML content converted to clean markdown (tables, code blocks, headings intact)",
+      "files": ["C:\\Users\\ShaunSmith\\code\\code-skills\\pandoc-docker-workspace\\test-files\\api-spec.html"]
+    },
+    {
+      "id": 3,
+      "prompt": "convert C:\\Users\\ShaunSmith\\code\\code-skills\\pandoc-docker-workspace\\test-files\\meeting-notes.md to mp3",
+      "expected_output": "Claude should recognize mp3 is not a supported pandoc output format and tell the user clearly, rather than attempting the conversion and failing",
+      "files": ["C:\\Users\\ShaunSmith\\code\\code-skills\\pandoc-docker-workspace\\test-files\\meeting-notes.md"]
+    }
+  ]
+}
