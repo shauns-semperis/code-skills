@@ -41,30 +41,32 @@ Write commit messages that explain **why** changes exist, not just what files ch
 1. Problem/goal statement
 2. Approach taken
 
-**DON'T write task lists:**
+**DON'T write task lists** — including task lists disguised as prose. If each clause maps 1:1 to a bullet you could have written, it's still a task list:
 ```
-❌ Bad:
+❌ Bad (bullets):
 - Added PDF service
 - Updated API endpoint
 - Wrote tests
+
+❌ Also bad (same list, commas instead of dashes):
+Added PDF generation service, created /api/reports/export endpoint,
+and updated frontend with comprehensive test coverage.
 ```
 
-**DO explain intent:**
+**DO explain intent** — the problem that motivated the change and why this approach:
 ```
 ✅ Good:
-This allows users to export reports offline, addressing feedback that 
-stakeholders need print-friendly formats.
-
-Implementation adds PDF generation service with /api/reports/export endpoint
-and tests covering error handling.
+Stakeholders need to review reports offline, but the app only supports
+on-screen viewing. PDF export addresses this without changing the
+existing report rendering pipeline.
 ```
 
 ## Commit Types
 
 | Type | When to Use |
 |------|-------------|
-| feat | New feature for users |
-| fix | Bug fix |
+| feat | New user-facing feature or behaviour change (users see something different) |
+| fix | Something was broken and this corrects it |
 | docs | Documentation only |
 | style | Formatting, no behavior change |
 | refactor | Code cleanup, no behavior change |
@@ -74,6 +76,15 @@ and tests covering error handling.
 | ci | CI configuration changes |
 | chore | Maintenance or cleanup |
 | revert | Undoing previous commit |
+
+### Choosing between `feat`, `fix`, and `refactor`
+
+Three-question test:
+1. **Was something broken?** → `fix`
+2. **Does the user see different behaviour?** → `feat` (new capability, changed defaults, different API shape)
+3. **Same external behaviour, different internals?** → `refactor` (swapping libraries, restructuring code, renaming internals)
+
+The key distinction between `feat` and `refactor` is whether **external behaviour changed**. Replacing Newtonsoft.Json with System.Text.Json while preserving the same serialization output is `refactor` — the implementation changed but callers see identical results. Adding a new output format or changing how nulls are serialized would be `feat`.
 
 ## Scopes (Optional)
 
@@ -87,7 +98,9 @@ Common scopes: auth, api, db, ui, ci, docs
 
 ## Breaking Changes
 
-Mark breaking changes with `!` after type/scope:
+Only mark a change as breaking if it affects code that has already been pushed or released. Changing behaviour on a local branch that hasn't been shared can't break anyone — don't add `!` or `BREAKING CHANGE` just because the diff looks significant. Check `git log --oneline @{upstream}..HEAD` or whether the branch has been pushed before deciding.
+
+When a change genuinely breaks existing consumers, mark it with `!` after type/scope:
 
 ```
 feat(api)!: change pagination to 1-indexed
@@ -118,11 +131,9 @@ feat: add PDF export
 ```
 feat(reports): add PDF export functionality
 
-This allows users to export reports offline, addressing stakeholder 
-feedback for print-friendly formats.
-
-Implementation includes PDF generation service, /api/reports/export 
-endpoint, and frontend export button with comprehensive test coverage.
+Stakeholders need to review reports offline, but the app only supports
+on-screen viewing. PDF export addresses this without changing the
+existing report rendering pipeline.
 ```
 
 ### Bug Fix
@@ -168,9 +179,14 @@ operations, with 15 files updated to use the abstraction.
 |---------|-----|
 | "Added feature" (past tense) | Use imperative: "add feature" |
 | No type prefix | Always start with type: `feat:`, `fix:`, etc. |
-| Task list in body | Explain problem/goal, not activities |
+| Task list in body (bullets or prose) | Explain problem/goal, not activities — commas don't fix a list |
+| Body invents context not in the diff | Only state what you know from the diff, ticket, or conversation |
 | Vague summary ("update auth") | Be specific ("add token refresh rotation") |
 | Breaking change not marked | Add `!` or BREAKING CHANGE footer |
+| `!` on unpushed/unreleased code | Only mark breaking when existing consumers are affected |
+| `fix` for a deliberate behaviour change | Use `feat` — `fix` means something was broken |
+| `feat` for an internal swap (same output) | Use `refactor` — if users see the same behaviour, it's not a feature |
+| Vague filler ("fixes the root issue") | Be specific — name the bug, the behaviour, the cause. If you don't know, ask. |
 | Description restates diff | Explain WHY, not what files changed |
 
 ## The Bar
@@ -179,6 +195,7 @@ A good commit message helps future-you understand:
 - What problem were we solving?
 - Why this approach?
 
-**Test:** If the body could be replaced by reading the diff, rewrite it.
-If it's a checklist of files, rewrite it.
-If it feels human and clear, it's good.
+**Tests:**
+- If the body could be replaced by reading the diff, rewrite it.
+- If each sentence maps 1:1 to a bullet you could have written, it's still a task list — rewrite it.
+- If a claim in the body isn't supported by the diff, the ticket, or context you've actually been given, delete it. Don't invent motivation — a shorter honest body beats a longer fabricated one.
