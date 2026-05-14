@@ -34,6 +34,22 @@ Follow the [Anthropic skill authoring best practices](https://platform.claude.co
 5. If the skill has objectively verifiable output, add test cases in `evals/evals.json`
 6. Update `.claude-plugin/plugin.json` description if the new skill changes the plugin's scope
 
+## Versioning
+
+Version bumps are automated via [commitizen](https://commitizen-tools.github.io/commitizen/). Install it once:
+
+```
+pipx install commitizen
+```
+
+When you're ready to release, run from the repo root:
+
+```
+cz bump
+```
+
+This reads commits since the last tag, determines the semver increment (`feat` → minor, `fix` → patch, breaking → major), updates `.claude-plugin/plugin.json`, and creates a version tag. Push with `git push --follow-tags`.
+
 ## Commits
 
 Follow [Conventional Commits](https://www.conventionalcommits.org/):

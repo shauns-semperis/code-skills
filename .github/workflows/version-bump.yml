@@ -1,0 +1,38 @@
+name: Version bump
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  bump:
+    # Skip if this push is already a version bump commit (avoids infinite loop)
+    if: "!startsWith(github.event.head_commit.message, 'bump:')"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - run: pip install commitizen
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version
+        id: bump
+        run: cz bump --yes && echo "bumped=true" >> $GITHUB_OUTPUT || echo "bumped=false" >> $GITHUB_OUTPUT
+
+      - name: Push
+        if: steps.bump.outputs.bumped == 'true'
+        run: git push --follow-tags
