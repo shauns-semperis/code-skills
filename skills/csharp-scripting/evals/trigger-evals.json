@@ -1,0 +1,21 @@
+[
+  {"query": "quick q — does C#'s `decimal.Parse` choke on '1,234.56' or do I need NumberStyles? just wanna see what it does", "should_trigger": true},
+  {"query": "whip up a tiny C# snippet that hits the GitHub API and dumps the rate-limit headers, don't bother making a project", "should_trigger": true},
+  {"query": "use Newtonsoft.Json to serialize this object and show me what the output looks like", "should_trigger": true},
+  {"query": "I need ~50 fake users (names/emails/signup dates) for a demo — generate them with Bogus in C#", "should_trigger": true},
+  {"query": "in C#, what does `DateTimeOffset.Parse` do with '2024-13-45' — throw or clamp?", "should_trigger": true},
+  {"query": "mid-refactor on OrderService but real quick — sanity-check how `Span<char>.Slice` behaves on an empty span, throwaway test", "should_trigger": true},
+  {"query": "prototype a C# regex that pulls all ISBN-13s out of a blob of text, lemme see it run", "should_trigger": true},
+  {"query": "does System.Text.Json round-trip a record with an init-only property by default? show me", "should_trigger": true},
+  {"query": "test whether BCrypt.Net-Next's HashPassword is deterministic — spin something up", "should_trigger": true},
+
+  {"query": "add a `GetByEmailAsync` to our UserRepository in `src/Data/UserRepository.cs` and wire it into DI", "should_trigger": false},
+  {"query": "the payment webhook handler is throwing a NullRef on line 88 of WebhookController.cs, fix it", "should_trigger": false},
+  {"query": "quick one-off: generate 100 rows of test data as a CSV", "should_trigger": false},
+  {"query": "decompile Newtonsoft.Json.dll so I can see how JsonConvert.SerializeObject works internally", "should_trigger": false},
+  {"query": "generate a typed C# client from this openapi.json spec", "should_trigger": false},
+  {"query": "what's the difference between Task and ValueTask in C#? when should I use each?", "should_trigger": false},
+  {"query": "run our test suite and tell me which xUnit tests are failing", "should_trigger": false},
+  {"query": "write a Python script to quickly check if this URL returns 200", "should_trigger": false},
+  {"query": "turn our C# coding conventions into a team style-guide doc", "should_trigger": false}
+]

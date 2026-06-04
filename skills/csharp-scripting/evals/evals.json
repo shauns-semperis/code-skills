@@ -1,0 +1,20 @@
+{
+  "skill_name": "csharp-scripting",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Generate some sample JSON in C# using Newtonsoft.Json and write it to output.json.",
+      "expected_output": "Claude writes a single .cs file with a `#:package Newtonsoft.Json` directive at the top, then runs it with `dotnet run <file>.cs`. It does NOT scaffold a project (`dotnet new`, `dotnet add package`), and does NOT generate the JSON inline without executing code. Ideally it cleans up the .cs file afterward."
+    },
+    {
+      "id": 2,
+      "prompt": "Quick one-off: in C#, print the SHA-256 of the string 'hello'. Don't spend time on setup.",
+      "expected_output": "Claude uses a file-based app (single .cs file, `dotnet run file.cs`) or pipes a one-liner via stdin (`echo '...' | dotnet run -`). It does NOT run `dotnet new console` or create a .csproj — the 'don't spend time on setup' and 'quick one-off' cues should rule out scaffolding."
+    },
+    {
+      "id": 3,
+      "prompt": "Use C# with BenchmarkDotNet to compare two ways of concatenating strings.",
+      "expected_output": "Claude creates a single .cs file with `#:package BenchmarkDotNet` and runs it via `dotnet run`, rather than scaffolding a console project and adding the package separately. The package is declared with a `#:package` directive, not `dotnet add package`."
+    }
+  ]
+}
