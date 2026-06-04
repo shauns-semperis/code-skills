@@ -1,7 +1,7 @@
 {
   "name": "code-skills",
   "description": "A collection of engineering skills for developer workflows — spanning .NET, documentation, testing, and version control.",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "author": {
     "name": "shauns-semperis"
   },
