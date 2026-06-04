@@ -35,4 +35,4 @@ jobs:
 
       - name: Push
         if: steps.bump.outputs.bumped == 'true'
-        run: git push --follow-tags
+        run: git push && git push --tags
