@@ -6,6 +6,7 @@ Engineering skills for Claude Code — documentation writing, .NET coding conven
 
 | Skill | What it does |
 |-------|-------------|
+| `csharp-scripting` | Runs one-off C# tasks as .NET 10 file-based apps (`dotnet run file.cs`) instead of scaffolding a project |
 | `git-conventional-commits` | Writes commit messages that explain *why* changes exist, following the Conventional Commits spec |
 | `docs-mailchimp-voice` | Reviews and rewrites public-facing documentation (READMEs, guides, changelogs) to sound human and helpful |
 | `documenting-csharp-code` | Enforces concise C# XML doc comments — one-sentence summaries, proper `<see cref="">` tags, no boilerplate |
