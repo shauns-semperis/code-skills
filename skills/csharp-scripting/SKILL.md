@@ -81,6 +81,34 @@ they specified. It also can't catch type errors or serialization issues.
 Don't fabricate tool usage. If you didn't run `dotnet run file.cs`, don't
 say you did. The user can verify.
 
+## Gotchas
+
+### CS8803: top-level statements must precede type declarations
+
+If you define a class or namespace and also have top-level statements, the
+top-level statements must come first. Putting a class definition before them
+causes `CS8803`.
+
+```csharp
+// ✅ top-level statements first, then type definitions
+var result = Helper.Greet("world");
+Console.WriteLine(result);
+
+class Helper {
+    public static string Greet(string name) => $"Hello, {name}!";
+}
+```
+
+```csharp
+// ❌ CS8803 — type declaration before top-level statement
+class Helper {
+    public static string Greet(string name) => $"Hello, {name}!";
+}
+
+var result = Helper.Greet("world"); // error here
+Console.WriteLine(result);
+```
+
 ## Example
 
 User: *"Generate sample JSON in C# using Newtonsoft.Json."*
