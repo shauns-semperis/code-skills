@@ -1,7 +1,7 @@
 ---
 name: dotnet-ilspy
 description: Understand implementation details of .NET code by decompiling assemblies. Use when you want to see how a .NET API works internally, inspect NuGet package source, view framework implementation, or understand compiled .NET binaries.
-allowed-tools: Bash(dnx:*)
+allowed-tools: Bash(ilspycmd:*), Bash(dnx ilspycmd:*), Bash(find:*), Bash(dotnet --list-runtimes), Bash(dotnet --list-sdks), Bash(dotnet --version)
 ---
 
 # .NET Assembly Decompilation with ILSpy
