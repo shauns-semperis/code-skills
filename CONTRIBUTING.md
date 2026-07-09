@@ -78,7 +78,7 @@ Before submitting a skill:
 - [ ] `SKILL.md` has valid frontmatter (`name`, `description`)
 - [ ] `README.md` exists in the skill directory
 - [ ] Skill is listed in the project `README.md` table
-- [ ] Description is third person and under 1024 characters
+- [ ] Description is third person and under 1,536 characters (Claude Code truncates `description` + `when_to_use` at 1,536 chars in the skill listing)
 - [ ] File paths use forward slashes
 - [ ] No time-sensitive information
 - [ ] Tested with at least 2-3 realistic prompts

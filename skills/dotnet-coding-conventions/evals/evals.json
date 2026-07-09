@@ -1,0 +1,29 @@
+{
+  "skill_name": "dotnet-coding-conventions",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Add logging to OrderService: log Information when an order is placed (include the order ID and total amount), and log a Warning when a retry happens (include the attempt number and max retries).",
+      "expected_output": "Uses [LoggerMessage] source-generated partial methods with strongly-typed parameters (int orderId, decimal total, int attempt, int maxRetries), correct log levels (Information for placed, Warning for retry), no string interpolation, no ToString(), named placeholders.",
+      "files": ["OrderService.cs"]
+    },
+    {
+      "id": 2,
+      "prompt": "Add error logging in PaymentProcessor for a failed payment (include the order id, the error code, and the exception), plus a debug log inside the loop that processes each line item (include the SKU and quantity).",
+      "expected_output": "Uses [LoggerMessage] delegates for both the error and debug log; exception passed as a typed Exception parameter (not ex.ToString()); error code passed as its own typed parameter, not concatenated/interpolated; debug log uses Debug level for the per-item loop.",
+      "files": ["PaymentProcessor.cs"]
+    },
+    {
+      "id": 3,
+      "prompt": "Clean up the logging in ShipmentTracker.cs — it's inconsistent and I think there might be some performance issues with it.",
+      "expected_output": "Migrates all four log calls to [LoggerMessage] partial methods, makes the class partial, removes string interpolation and string concatenation, removes ToString() calls on the exception and CarrierResponse, converts positional placeholders {0}/{1} to named placeholders.",
+      "files": ["ShipmentTracker.cs"]
+    },
+    {
+      "id": 4,
+      "prompt": "DataImportService has three places that need a failure log (parsing, validating, applying a record) — fill in the TODOs with appropriate logging.",
+      "expected_output": "Uses one deliberately-scoped, reusable [LoggerMessage] delegate (parameterized by e.g. a stage/operation name and the record identifier) rather than three near-identical bespoke delegates (LogParseFailure/LogValidationFailure/LogApplyFailure); chooses Warning level consistently; not overly chatty.",
+      "files": ["DataImportService.cs"]
+    }
+  ]
+}

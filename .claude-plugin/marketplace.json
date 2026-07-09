@@ -1,16 +1,17 @@
 {
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
   "name": "code-skills",
+  "description": "Engineering skills for developer workflow — documentation writing, .NET coding conventions, xUnit testing, OpenAPI client generation, and git commit practices.",
   "owner": {
     "name": "shauns-semperis"
-  },
-  "metadata": {
-    "description": "Engineering skills for developer workflow — documentation writing, .NET coding conventions, xUnit testing, OpenAPI client generation, and git commit practices."
   },
   "plugins": [
     {
       "name": "code-skills",
       "source": "./",
-      "description": "Engineering skills for developer workflow — documentation writing, .NET coding conventions, xUnit testing, OpenAPI client generation, and git commit practices."
+      "description": "Engineering skills for developer workflow — documentation writing, .NET coding conventions, xUnit testing, OpenAPI client generation, and git commit practices.",
+      "category": "developer-tools",
+      "tags": ["dotnet", "csharp", "testing", "documentation", "git"]
     }
   ]
 }

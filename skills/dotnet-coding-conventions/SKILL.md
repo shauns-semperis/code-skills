@@ -21,6 +21,7 @@ Apply these conventions consistently when writing or reviewing C# code. They ref
 | Braces — always required | `if (x) DoThing();` | `if (x) { DoThing(); }` |
 | Magic strings — used 2+ times | `"my-key"` repeated inline | `const string MyKey = "my-key"` |
 | Logging | `_logger.LogInformation($"Order {id}")` | `[LoggerMessage]` source-generated method |
+| Logging — near-duplicate delegates | `LogParseFailed`, `LogValidateFailed`, `LogApplyFailed` (same shape) | One `LogRecordFailed(recordId, stage, reason)` |
 
 ---
 
@@ -197,6 +198,18 @@ LogProcessingOrder(order.Id, user.Id);
 
 **Setup:** The containing class must be `partial`. The `ILogger` is captured from `this._logger` (injected via constructor as usual).
 
+**Optional exception:** `ILogger`'s underlying `Log` method takes a nullable `Exception?`, and the source generator honors that — declare the parameter as `Exception?` and pass `null` at call sites where there's nothing to attach, rather than writing a second near-duplicate delegate just to drop the exception parameter.
+
+```csharp
+[LoggerMessage(Level = LogLevel.Warning, Message = "Payment failed for order {OrderId}: {Reason}")]
+private partial void LogPaymentFailed(int orderId, string reason, Exception? exception);
+
+// With an exception:
+LogPaymentFailed(order.Id, "card declined", ex);
+// Without one:
+LogPaymentFailed(order.Id, "insufficient funds", exception: null);
+```
+
 **Allocation rules — apply to ALL log calls (including `[LoggerMessage]`):**
 - Never use string interpolation (`$"..."`) in a log message or argument
 - Never call `.ToString()` on a value just to pass it to a log method
@@ -253,6 +266,30 @@ private partial void LogProcessingPayment(Guid orderId, decimal amount);
 - Does it include *why* (for errors/warnings)?
 - Could an on-call engineer act on it without reading the code?
 
+### Delegate consolidation
+
+`[LoggerMessage]` makes it cheap to add a new delegate for every call site, which quietly encourages the wrong instinct: one bespoke method per place that logs, even when several of them are really the same event with different words. Each delegate is a distinct event with its own template — treat that as a real design decision, not a formality to satisfy per call site.
+
+Before adding a new delegate, check whether an existing one already fits: same log level, same shape of data, same reason a reader would look it up. If the only difference is which method happened to call it, reuse it.
+
+```csharp
+// ❌ Wrong — three delegates that are the same event (a stage of record processing failed)
+// with the same shape, differing only in wording
+[LoggerMessage(Level = LogLevel.Warning, Message = "Failed to validate record {RecordId}")]
+private partial void LogValidateFailed(string recordId);
+
+[LoggerMessage(Level = LogLevel.Warning, Message = "Failed to apply record {RecordId}")]
+private partial void LogApplyFailed(string recordId);
+
+// ✅ Correct — one delegate, parameterized by what varies (the stage and the reason)
+[LoggerMessage(Level = LogLevel.Warning, Message = "Record {RecordId} failed at {Stage}: {Reason}")]
+private partial void LogRecordFailed(string recordId, string stage, string reason);
+```
+
+Keep delegates separate when the *data* genuinely differs, not just the wording — e.g. a parse failure logging the raw unparsed input has a different shape (no record ID exists yet) from a validate/apply failure logging an established record ID, so collapsing those into one template would force an awkward or misleading placeholder. Also keep them separate when something functional depends on the distinction: different levels, a stable `EventId` a downstream system filters on, or a message a runbook references by name.
+
+**Ask before adding a delegate:** would this event read differently in a log query than the nearest existing one, or am I only avoiding a shared parameter?
+
 ### Logging scopes
 
 When multiple log messages within a unit of work share common properties, add them once via a scope rather than repeating them on every message.
@@ -302,6 +339,8 @@ Scope is appropriate when:
 | `LogError("Failed")` for a validation/not-found result | Use `LogWarning`; `Error` is for unrecoverable failures |
 | `LogInformation` for every step inside a method | Use `Debug` or `Trace`; `Information` is for key business events |
 | Same `OrderId`/`UserId` on 3+ messages in one operation | Use `_logger.BeginScope(new Dictionary<string, object> { ["OrderId"] = id, ... })` |
+| A new `[LoggerMessage]` delegate per call site that only differs in wording | Reuse or add one delegate parameterized by what actually varies (e.g. a stage/reason string) |
+| A second delegate created just to drop the exception parameter | Declare `Exception? exception` and pass `null` when there isn't one |
 
 ## Rationalizations
 
@@ -317,3 +356,4 @@ Scope is appropriate when:
 | "Adding IDs is verbose" | Without IDs, the log is noise. An on-call engineer needs to act without reading the code. |
 | "I'll use `Information` so it's always visible" | Overlogging buries real events. Use the correct level so `Information` remains meaningful. |
 | "Adding scope is extra ceremony" | Three shared properties on three messages = nine repeated values. Scope removes duplication and improves query filtering. |
+| "Each call site gets its own delegate, that's what the pattern is for" | The pattern is for defining an event once and reusing it. A delegate per call site just moves the string-per-call-site problem into attributes. |
