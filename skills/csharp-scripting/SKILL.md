@@ -109,6 +109,24 @@ var result = Helper.Greet("world"); // error here
 Console.WriteLine(result);
 ```
 
+### Reflection.Emit / dynamic code gen is off by default
+
+File-based apps run in an AOT-style mode where
+`RuntimeFeature.IsDynamicCodeSupported` is `false`. Anything using
+`System.Reflection.Emit` — dynamic proxies, some serializers, in-process
+benchmark harnesses — throws `NotSupportedException: Dynamic code generation
+is not supported on this platform`. Add `#:property PublishAot=false` at the
+top of the file to restore it.
+
+```csharp
+#:property PublishAot=false   // IsDynamicCodeSupported becomes true
+```
+
+Observed on the .NET 10 SDK (10.0.300). It's a default, not a fixed rule — if
+a later SDK doesn't set it, `IsDynamicCodeSupported` will already be `true` and
+the property is harmless. Check `RuntimeFeature.IsDynamicCodeSupported` if
+you're unsure rather than assuming.
+
 ## Example
 
 User: *"Generate sample JSON in C# using Newtonsoft.Json."*
