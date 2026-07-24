@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "evals": [
+    {
+      "name": "loop-vs-linq-sum",
+      "description": "Compares loop-based sum vs LINQ sum on an array",
+      "prompt": "I want to benchmark the performance difference between a manual foreach loop and LINQ for summing an array of 10,000 integers. Which is faster?",
+      "expected_behavior": "Should create a single .cs file with BenchmarkDotNet setup, [InProcess] and [MemoryDiagnoser] attributes, two benchmark methods (Loop and Linq), and run with `dotnet run file.cs -c Release`. Output should show mean time and allocated bytes for each approach.",
+      "pass_criteria": "File created with correct structure, runs without errors, produces benchmark table comparing both approaches with timing and allocation data"
+    },
+    {
+      "name": "string-concatenation-vs-builder",
+      "description": "Compares string concatenation vs StringBuilder for building a long string",
+      "prompt": "I need to benchmark concatenating 1000 strings. Is string concatenation or StringBuilder faster? Show me the allocation differences too.",
+      "expected_behavior": "Should create a .cs file with two benchmark methods: one using += concatenation, one using StringBuilder. Both should run with [InProcess] and [MemoryDiagnoser]. Output should clearly show allocation difference (StringBuilder should allocate much less).",
+      "pass_criteria": "Correctly demonstrates allocation difference between approaches, StringBuilder shows significantly lower allocated bytes, timing and allocation both reported"
+    },
+    {
+      "name": "collection-where-vs-loop",
+      "description": "Compares LINQ Where filtering vs manual loop filtering",
+      "prompt": "Should I use LINQ Where or a manual foreach with an if statement to filter a list of 1000 items? Benchmark it for me.",
+      "expected_behavior": "Should create a .cs file with two benchmark methods: one using LINQ Where, one using foreach + if. Include [MemoryDiagnoser] to show allocation differences. Run with dotnet run and display results.",
+      "pass_criteria": "Both filtering approaches benchmarked, results show timing and allocation for each, correctly uses [InProcess] and [MemoryDiagnoser]"
+    },
+    {
+      "name": "memory-only-benchmark",
+      "description": "Tests that [MemoryDiagnoser] can be dropped if user says allocations don't matter",
+      "prompt": "Benchmark the speed of object creation vs struct creation for a simple Point type. I don't care about allocations, just speed.",
+      "expected_behavior": "Should create a benchmark without [MemoryDiagnoser] (since user said allocations don't matter). Should include [InProcess]. Run with -c Release and show timing results.",
+      "pass_criteria": "Benchmark runs successfully, [MemoryDiagnoser] is omitted as requested, [InProcess] is still present, results show timing comparison"
+    },
+    {
+      "name": "dict-vs-custom-lookup",
+      "description": "Compares Dictionary lookup vs manual class-based lookup",
+      "prompt": "I have a small mapping (100 items). Is Dictionary lookup faster than checking values in a custom class? I want to see both timing and memory.",
+      "expected_behavior": "Should create a .cs file with benchmarks for Dictionary lookup and custom class lookup. Include [MemoryDiagnoser]. Correctly format with [InProcess], run with Release config.",
+      "pass_criteria": "Both approaches benchmarked, allocation data shown for both, correctly identifies which uses less memory and which is faster"
+    }
+  ]
+}
