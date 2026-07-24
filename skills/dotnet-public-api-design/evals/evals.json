@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "evals": [
+    {
+      "name": "detect-breaking-parameter-change",
+      "description": "Identifies when changing a required parameter position breaks API compatibility",
+      "prompt": "I need to review this API change. Previously we had:\n\n```csharp\npublic void ProcessOrder(Order order, int priority);\n```\n\nNow I want to change it to:\n\n```csharp\npublic void ProcessOrder(int priority, Order order);\n```\n\nIs this a breaking change?",
+      "expected_behavior": "Should identify this as a breaking change because parameter order changed, which breaks existing callers using positional arguments. Should suggest adding a new overload instead and deprecating the old one.",
+      "pass_criteria": "Response identifies breaking change, explains why (parameter reordering breaks positional calls), and suggests deprecation pattern as solution"
+    },
+    {
+      "name": "prevent-required-parameter-addition",
+      "description": "Catches when adding a required parameter to an existing method breaks compatibility",
+      "prompt": "I want to add new validation to our ProcessOrder method. Can I add a new required parameter like this?\n\n```csharp\n// Old\npublic void ProcessOrder(Order order);\n\n// New\npublic void ProcessOrder(Order order, IValidator validator);\n```\n\nWill this break existing code?",
+      "expected_behavior": "Should identify this as breaking because callers don't pass the validator parameter. Should suggest adding an overload with a default validator or making the parameter optional.",
+      "pass_criteria": "Response identifies breaking change and suggests adding overload or optional parameter as solution"
+    },
+    {
+      "name": "enforce-async-naming",
+      "description": "Validates async method naming conventions",
+      "prompt": "I'm creating an async wrapper. Is this the correct naming?\n\n```csharp\npublic async Task<Widget> GetWidget(int id)\n{\n    // implementation\n}\n```",
+      "expected_behavior": "Should point out that async methods should use the Async suffix: GetWidgetAsync. Should explain why (consistency, distinguishing from sync version).",
+      "pass_criteria": "Response identifies missing Async suffix and explains the convention"
+    },
+    {
+      "name": "cancellation-token-placement",
+      "description": "Enforces CancellationToken as last parameter (CA1068)",
+      "prompt": "I'm writing an async method with multiple parameters. Is this correct?\n\n```csharp\npublic Task<Order> GetOrderAsync(\n    int orderId,\n    CancellationToken cancellationToken = default,\n    bool includeDetails = false);\n```",
+      "expected_behavior": "Should identify that CancellationToken is not in the last position. Should explain CA1068 rule and reorder parameters.",
+      "pass_criteria": "Response identifies CA1068 violation and shows correct parameter order (required, then optional, then cancellationToken)"
+    },
+    {
+      "name": "guide-return-type-selection",
+      "description": "Advises on appropriate return types",
+      "prompt": "Which return type should I use for a method that retrieves a widget that might not exist?\n\nOption A: `public IEnumerable<Widget> GetWidgets();`\nOption B: `public Widget? GetWidget(int id);`\nOption C: `public IReadOnlyList<Widget> GetWidgets();`",
+      "expected_behavior": "Should recommend Option B for single optional entity (nullable). For collections, should recommend Option C (IReadOnlyList) over IEnumerable because it signals materialized collection. Should explain the rationale.",
+      "pass_criteria": "Response recommends correct options with reasoning about signaling intent to callers"
+    },
+    {
+      "name": "detect-mutable-return-type",
+      "description": "Catches mutable collections in public API return types",
+      "prompt": "What's wrong with this public API method?\n\n```csharp\npublic List<Widget> GetActiveWidgets()\n{\n    return _widgets.Where(w => w.IsActive).ToList();\n}\n```",
+      "expected_behavior": "Should identify that returning a mutable List breaks API stability. Should recommend IReadOnlyList instead. Should explain why mutable returns are problematic.",
+      "pass_criteria": "Response identifies the issue and recommends IReadOnlyList with explanation"
+    },
+    {
+      "name": "guide-wire-format-evolution",
+      "description": "Advises on safely evolving serialized message formats",
+      "prompt": "We need to add a new field to our serialized message format for a distributed system. We have nodes running v1 and will gradually upgrade to v2. How should we approach this safely?",
+      "expected_behavior": "Should explain two-phase rollout: (1) add read support first so v2 readers can handle old messages, (2) enable write in next release after all v1 readers are upgraded. Should mention defensive serialization with JsonPropertyName and optional field handling.",
+      "pass_criteria": "Response describes two-phase approach and mentions defensive serialization strategies"
+    },
+    {
+      "name": "identify-abbreviation-in-api",
+      "description": "Catches inappropriate abbreviations in public API names",
+      "prompt": "Is this a good public API name?\n\n```csharp\npublic IReadOnlyList<TxnResult> GetRecentTxns(int cnt);\n```",
+      "expected_behavior": "Should identify multiple abbreviations (TxnResult, Txns, cnt) that reduce clarity in public API. Should recommend: TransactionResult, GetRecentTransactions, count",
+      "pass_criteria": "Response identifies abbreviations and recommends full names"
+    },
+    {
+      "name": "explain-extend-only-design",
+      "description": "Understands extend-only design principles",
+      "prompt": "Our library is at v1.0. In v2.0, can we remove an obsolete method that's been marked [Obsolete] since v1.5?",
+      "expected_behavior": "Should explain that extend-only design prefers coexistence over removal, even in major versions. Should note that removal is acceptable in major versions IF the obsolete period was adequate (typically 1+ minor versions). Should recommend communication with users about removal timeline.",
+      "pass_criteria": "Response explains extend-only principles and discusses appropriate removal timing"
+    },
+    {
+      "name": "prevent-async-void",
+      "description": "Catches async void in public APIs",
+      "prompt": "Is this a good public API signature?\n\n```csharp\npublic async void NotifyUserAsync(string userId, string message);\n```",
+      "expected_behavior": "Should identify that async void should never be in public APIs (except event handlers). Should explain loss of error handling and testability. Should recommend Task return type.",
+      "pass_criteria": "Response identifies async void issue and recommends Task"
+    },
+    {
+      "name": "guide-exception-hierarchy",
+      "description": "Advises on designing library exception hierarchies",
+      "prompt": "I'm designing exceptions for my widget library. Should each exception inherit directly from Exception, or should I create a base exception?",
+      "expected_behavior": "Should recommend creating a WidgetServiceException base that inherits from Exception, then having specific exceptions (WidgetNotFoundException, WidgetValidationException) inherit from it. Should explain benefits (catching all library exceptions, clearer intent).",
+      "pass_criteria": "Response recommends base exception pattern with explanation"
+    },
+    {
+      "name": "guide-try-pattern",
+      "description": "Explains when to use Try pattern vs nullable return",
+      "prompt": "I have a method that tries to parse a widget ID. Should I:\nA) Return `Widget?` (nullable)\nB) Use Try pattern: `bool TryGetWidget(int id, out Widget widget)`\nC) Throw an exception if parsing fails",
+      "expected_behavior": "Should explain that Try pattern (B) is best for parsing/validation where failure is expected and frequent. Should note that (C) throws exceptions are for unexpected failures, and (A) is for 'not found' scenarios.",
+      "pass_criteria": "Response explains when each pattern is appropriate with context"
+    },
+    {
+      "name": "detect-silent-behavior-change",
+      "description": "Identifies when changing defaults breaks user code",
+      "prompt": "In our next release, I want to change the default for caching:\n\n```csharp\n// Old default\npublic void Configure(bool enableCaching = false) { }\n\n// New default\npublic void Configure(bool enableCaching = true) { }\n```\n\nThis should be fine, right? It's the same method signature.",
+      "expected_behavior": "Should identify this as a breaking change because existing code relies on the old default. Should recommend adding a new overload or parameter instead of changing defaults.",
+      "pass_criteria": "Response identifies silent breaking change and recommends solution"
+    }
+  ]
+}
