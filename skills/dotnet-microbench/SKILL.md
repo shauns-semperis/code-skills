@@ -26,6 +26,7 @@ BenchmarkRunner.Run<MyBenchmarks>();
 
 [InProcess]
 [MemoryDiagnoser]
+[HtmlExporter]
 public class MyBenchmarks
 {
     [Benchmark]
@@ -43,6 +44,8 @@ dotnet run bench.cs -c Release
 **What matters most**: produce a clear summary table with timing and allocation data, then interpret what it means. Showing the code structure upfront is helpful but the results table is what the human needs.
 
 Verified working: `[MemoryDiagnoser]` reports an `Allocated` column correctly under `InProcessEmitToolchain` in a file-based app — no compatibility issues, no extra directives needed. Only drop it if the human says they don't care about allocations for this comparison.
+
+Add `[HtmlExporter]` too: BenchmarkDotNet writes the results table as HTML to `BenchmarkDotNet.Artifacts/results/<ClassName>-report.html`, so the results viewer (below) can copy that `<table>` markup directly instead of hand-transcribing rows from console output.
 
 ---
 
@@ -91,6 +94,7 @@ BenchmarkRunner.Run<ArraySum>();
 
 [InProcess]
 [MemoryDiagnoser]
+[HtmlExporter]
 public class ArraySum
 {
     private readonly int[] data = Enumerable.Range(0, 10_000).ToArray();
@@ -112,119 +116,35 @@ public class ArraySum
 dotnet run bench.cs -c Release
 ```
 
-Produces a normal BenchmarkDotNet summary table (mean, error, stddev, allocated) and writes `BenchmarkDotNet.Artifacts/` next to the file — clean up both when done.
+Produces a normal BenchmarkDotNet summary table (mean, error, stddev, allocated), writes an HTML copy of it to `BenchmarkDotNet.Artifacts/results/ArraySum-report.html`, and leaves `BenchmarkDotNet.Artifacts/` next to the file — clean up both when done.
 
 ---
 
 ## Workflow
 
 1. Write the `.cs` file: `#:package BenchmarkDotNet@<version>`, `#:property PublishAot=false`
-2. Mark the benchmark class `[InProcess]` and `[MemoryDiagnoser]` (default on; drop only if told allocations don't matter)
-3. `dotnet run <file>.cs -c Release` and capture the results
-4. Generate an interactive HTML viewer with:
+2. Mark the benchmark class `[InProcess]`, `[MemoryDiagnoser]`, and `[HtmlExporter]` (drop `[MemoryDiagnoser]` only if told allocations don't matter)
+3. **Paste the full generated code into the chat response as a code block, explain what each benchmark measures, and stop — wait for the human to explicitly confirm before running anything.** Do not just write the file and reference it; the human must see the code in the conversation itself, not go find it in a tool call. A benchmark that measures the wrong thing (warmed-up cache, JIT already having run, wrong input size, comparing methods that aren't equivalent) produces a confident, wrong number — more expensive to catch after the fact than to review upfront. If the human asks for changes, update the code and show it again before running. If the human declines or cancels instead of confirming, treat it like step 7: delete the `.cs` file (and `BenchmarkDotNet.Artifacts/` if a prior run left one) before ending the task.
+4. Only after explicit confirmation: `dotnet run <file>.cs -c Release` and capture the results
+5. Generate an interactive HTML viewer with:
    - **Left side**: The benchmark code (syntax-highlighted)
-   - **Right side**: Benchmark table + analysis/interpretation
-5. Save the HTML file (e.g., `bench_results.html`) and open it so the user can review
-6. Clean up: delete the `.cs` file and `BenchmarkDotNet.Artifacts/` directory (but keep the HTML for later reference)
+   - **Right side**: The `<table>` from `BenchmarkDotNet.Artifacts/results/<ClassName>-report.html`, plus analysis/interpretation
+6. Save the HTML file (e.g., `bench_results.html`) and open it so the user can review
+7. Clean up: delete the `.cs` file and `BenchmarkDotNet.Artifacts/` directory (but keep the HTML for later reference). Do this whether the run happened or the human cancelled — never leave scratch benchmark files behind.
 
 ---
 
 ## Generating the HTML Results Viewer
 
-After running and capturing benchmark output, create a rich HTML5 document showing code and results side-by-side using semantic markup:
+After running and capturing benchmark output, copy `assets/template.html` to `bench_results.html` and fill in the three placeholders:
 
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="BenchmarkDotNet results with code and analysis">
-  <title>Benchmark Results</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { height: 100%; }
-    body { 
-      display: grid; grid-template-columns: 1fr 1fr; gap: 1px; 
-      height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #0d1117; color: #e6edf3; 
-    }
-    main { display: contents; }
-    section { padding: 32px; overflow-y: auto; background: #0d1117; }
-    section:first-of-type { border-right: 1px solid #30363d; }
-    h1 { font-size: 16px; font-weight: 700; color: #58a6ff; margin-bottom: 24px; }
-    article { margin-bottom: 24px; }
-    article h2 { font-size: 13px; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
-    code { font-family: "Monaco", "Courier New", monospace; font-size: 12px; }
-    pre { 
-      background: #161b22; border: 1px solid #30363d; border-radius: 6px;
-      padding: 16px; overflow-x: auto; line-height: 1.5; margin-bottom: 16px;
-    }
-    table { 
-      width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0;
-      border: 1px solid #30363d;
-    }
-    th { background: #161b22; border: 1px solid #30363d; padding: 10px 12px; text-align: left; font-weight: 600; }
-    td { border: 1px solid #30363d; padding: 10px 12px; }
-    aside { font-size: 13px; line-height: 1.6; color: #d0d4d9; }
-    strong { color: #f0883e; }
-  </style>
-</head>
-<body>
-  <main>
-    <section id="code-section">
-      <h1>Benchmark Code</h1>
-      <article>
-        <p style="font-size: 12px; color: #8b949e; margin-bottom: 12px;">
-          <code>dotnet run bench.cs -c Release</code>
-        </p>
-        <pre><code><!-- INSERT COMPLETE BENCHMARK CODE HERE --></code></pre>
-      </article>
-    </section>
-    
-    <section id="results-section">
-      <h1>Results & Analysis</h1>
-      
-      <article>
-        <h2>Summary Table</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Method</th>
-              <th>Mean</th>
-              <th>Error</th>
-              <th>StdDev</th>
-              <th>Allocated</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- INSERT BENCHMARKDOTNET TABLE ROWS HERE -->
-          </tbody>
-        </table>
-      </article>
-      
-      <article>
-        <h2>Key Findings</h2>
-        <aside>
-          <!-- INSERT ANALYSIS AND INTERPRETATION HERE -->
-        </aside>
-      </article>
-    </section>
-  </main>
-</body>
-</html>
-```
+- `<!-- INSERT COMPLETE BENCHMARK CODE HERE -->` — the full benchmark code, syntax-escaped
+- `<!-- INSERT BENCHMARKDOTNET TABLE ROWS HERE -->` — the `<tr>` rows copied straight out of `BenchmarkDotNet.Artifacts/results/<ClassName>-report.html` (from `[HtmlExporter]`), not retyped from console output
+- `<!-- INSERT ANALYSIS AND INTERPRETATION HERE -->` — what the numbers mean, in prose
 
-**Structure**:
-- `<main>` with `display: contents` acts as a layout container for two semantic `<section>` elements
-- Left `<section id="code-section">` shows the benchmark code
-- Right `<section id="results-section">` shows results table and analysis
-- `<article>` groups related content within sections
-- `<aside>` wraps interpretation/analysis text
-- Proper `<thead>/<tbody>` for the results table
-- `<pre><code>` for syntax-highlighted code blocks
+The template lays out code on the left (`<section id="code-section">`) and results/analysis on the right (`<section id="results-section">`), using semantic HTML5 (`<main>`, `<article>`, `<aside>`, `<thead>/<tbody>`) so the structure stays machine-readable and accessible.
 
-Save as `bench_results.html` and open in a browser. The semantic structure is machine-readable and accessible.
+Open the filled-in `bench_results.html` in a browser once done.
 
 ---
 

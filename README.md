@@ -12,6 +12,7 @@ Engineering skills for Claude Code — documentation writing, .NET coding conven
 | `documenting-csharp-code` | Enforces concise C# XML doc comments — one-sentence summaries, proper `<see cref="">` tags, no boilerplate |
 | `dotnet-coding-conventions` | Applies idiomatic C# 12+ conventions: null guards, collection expressions, logging with `[LoggerMessage]`, and more |
 | `dotnet-ilspy` | Decompiles .NET assemblies with ILSpy to inspect NuGet packages or framework internals |
+| `dotnet-microbench` | Runs quick BenchmarkDotNet comparisons from a single `.cs` file, no project scaffolding needed |
 | `dotnet-nswag` | Generates typed API clients from OpenAPI/Swagger specs using `dotnet dnx` or the `nswag` CLI |
 | `dotnet-public-api-design` | Designs stable public APIs for NuGet packages using extend-only principles, versioning, and wire format evolution |
 | `pandoc-docker` | Converts documents between formats (docx, md, html, pdf, epub, etc.) via pandoc in Docker — no local install needed |
