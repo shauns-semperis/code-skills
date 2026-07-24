@@ -1,8 +1,0 @@
-{
-  "eval_id": 0,
-  "eval_name": "loop-vs-linq-sum",
-  "prompt": "I want to benchmark the performance difference between a manual foreach loop and LINQ for summing an array of 10,000 integers. Which is faster?",
-  "benchmark_code": "#:package BenchmarkDotNet@0.14.0\n#:property PublishAot=false\n\nusing BenchmarkDotNet.Attributes;\nusing BenchmarkDotNet.Running;\n\nBenchmarkRunner.Run<ArraySum>();\n\n[InProcess]\n[MemoryDiagnoser]\npublic class ArraySum\n{\n    private readonly int[] data = Enumerable.Range(0, 10_000).ToArray();\n\n    [Benchmark]\n    public int Loop()\n    {\n        var sum = 0;\n        foreach (var x in data) sum += x;\n        return sum;\n    }\n\n    [Benchmark]\n    public int Linq() => data.Sum();\n}",
-  "results": "## Results\n\nThe LINQ approach is slightly faster than the manual foreach loop when summing 10,000 integers on .NET 10:\n\n| Method | Mean Time | Allocations |\n|--------|-----------|-------------|\n| Foreach | 3.035 µs | 0 bytes |\n| LINQ Sum() | 2.934 µs | 0 bytes |\n\n**LINQ wins by ~3.3%** (0.97x ratio). Both approaches produce zero heap allocations, so memory efficiency is identical.\n\n### Why LINQ is faster here\n\nModern .NET's JIT compiler specializes LINQ methods like `Sum()` when given simple predicates. The `_data.Sum(n => (long)n)` call gets optimized to a direct loop that's nearly identical to the manual foreach, but the JIT can apply additional optimizations because it understands the LINQ method's intent.",
-  "assertions": []
-}

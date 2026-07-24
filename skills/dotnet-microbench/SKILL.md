@@ -120,10 +120,111 @@ Produces a normal BenchmarkDotNet summary table (mean, error, stddev, allocated)
 
 1. Write the `.cs` file: `#:package BenchmarkDotNet@<version>`, `#:property PublishAot=false`
 2. Mark the benchmark class `[InProcess]` and `[MemoryDiagnoser]` (default on; drop only if told allocations don't matter)
-3. `dotnet run <file>.cs -c Release`
-4. Show the benchmark summary table (timing, allocations, error rates)
-5. Interpret the results: which approach is faster/uses less memory, and why
-6. Clean up: delete the `.cs` file and `BenchmarkDotNet.Artifacts/` directory
+3. `dotnet run <file>.cs -c Release` and capture the results
+4. Generate an interactive HTML viewer with:
+   - **Left side**: The benchmark code (syntax-highlighted)
+   - **Right side**: Benchmark table + analysis/interpretation
+5. Save the HTML file (e.g., `bench_results.html`) and open it so the user can review
+6. Clean up: delete the `.cs` file and `BenchmarkDotNet.Artifacts/` directory (but keep the HTML for later reference)
+
+---
+
+## Generating the HTML Results Viewer
+
+After running and capturing benchmark output, create a rich HTML5 document showing code and results side-by-side using semantic markup:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="BenchmarkDotNet results with code and analysis">
+  <title>Benchmark Results</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { height: 100%; }
+    body { 
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1px; 
+      height: 100vh; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0d1117; color: #e6edf3; 
+    }
+    main { display: contents; }
+    section { padding: 32px; overflow-y: auto; background: #0d1117; }
+    section:first-of-type { border-right: 1px solid #30363d; }
+    h1 { font-size: 16px; font-weight: 700; color: #58a6ff; margin-bottom: 24px; }
+    article { margin-bottom: 24px; }
+    article h2 { font-size: 13px; font-weight: 600; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+    code { font-family: "Monaco", "Courier New", monospace; font-size: 12px; }
+    pre { 
+      background: #161b22; border: 1px solid #30363d; border-radius: 6px;
+      padding: 16px; overflow-x: auto; line-height: 1.5; margin-bottom: 16px;
+    }
+    table { 
+      width: 100%; border-collapse: collapse; font-size: 13px; margin: 16px 0;
+      border: 1px solid #30363d;
+    }
+    th { background: #161b22; border: 1px solid #30363d; padding: 10px 12px; text-align: left; font-weight: 600; }
+    td { border: 1px solid #30363d; padding: 10px 12px; }
+    aside { font-size: 13px; line-height: 1.6; color: #d0d4d9; }
+    strong { color: #f0883e; }
+  </style>
+</head>
+<body>
+  <main>
+    <section id="code-section">
+      <h1>Benchmark Code</h1>
+      <article>
+        <p style="font-size: 12px; color: #8b949e; margin-bottom: 12px;">
+          <code>dotnet run bench.cs -c Release</code>
+        </p>
+        <pre><code><!-- INSERT COMPLETE BENCHMARK CODE HERE --></code></pre>
+      </article>
+    </section>
+    
+    <section id="results-section">
+      <h1>Results & Analysis</h1>
+      
+      <article>
+        <h2>Summary Table</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Mean</th>
+              <th>Error</th>
+              <th>StdDev</th>
+              <th>Allocated</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- INSERT BENCHMARKDOTNET TABLE ROWS HERE -->
+          </tbody>
+        </table>
+      </article>
+      
+      <article>
+        <h2>Key Findings</h2>
+        <aside>
+          <!-- INSERT ANALYSIS AND INTERPRETATION HERE -->
+        </aside>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
+```
+
+**Structure**:
+- `<main>` with `display: contents` acts as a layout container for two semantic `<section>` elements
+- Left `<section id="code-section">` shows the benchmark code
+- Right `<section id="results-section">` shows results table and analysis
+- `<article>` groups related content within sections
+- `<aside>` wraps interpretation/analysis text
+- Proper `<thead>/<tbody>` for the results table
+- `<pre><code>` for syntax-highlighted code blocks
+
+Save as `bench_results.html` and open in a browser. The semantic structure is machine-readable and accessible.
 
 ---
 
