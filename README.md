@@ -13,6 +13,7 @@ Engineering skills for Claude Code — documentation writing, .NET coding conven
 | `dotnet-coding-conventions` | Applies idiomatic C# 12+ conventions: null guards, collection expressions, logging with `[LoggerMessage]`, and more |
 | `dotnet-ilspy` | Decompiles .NET assemblies with ILSpy to inspect NuGet packages or framework internals |
 | `dotnet-nswag` | Generates typed API clients from OpenAPI/Swagger specs using `dotnet dnx` or the `nswag` CLI |
+| `dotnet-public-api-design` | Designs stable public APIs for NuGet packages using extend-only principles, versioning, and wire format evolution |
 | `pandoc-docker` | Converts documents between formats (docx, md, html, pdf, epub, etc.) via pandoc in Docker — no local install needed |
 | `testing-xunit-effectively` | Writes xUnit tests that verify public outcomes, not implementation details — with `[Theory]` for repeated patterns |
 
