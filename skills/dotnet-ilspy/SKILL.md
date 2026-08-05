@@ -1,7 +1,7 @@
 ---
 name: dotnet-ilspy
 description: Understand implementation details of .NET code by decompiling assemblies. Use when you want to see how a .NET API works internally, inspect NuGet package source, view framework implementation, or understand compiled .NET binaries.
-allowed-tools: Bash(ilspycmd:*), Bash(dnx ilspycmd:*), Bash(which ilspycmd), Bash(find:*), Bash(dotnet --list-runtimes), Bash(dotnet --list-sdks), Bash(dotnet --version), Bash(*ilspy-find.sh:*)
+allowed-tools: Bash(ilspycmd:*), Bash(dnx ilspycmd:*), Bash(which ilspycmd), Bash(find:*), Bash(dotnet --list-runtimes), Bash(dotnet --list-sdks), Bash(dotnet --version), Bash(*ilspy-find.sh:*), Bash(dotnet run *refs.cs*)
 ---
 
 # .NET Assembly Decompilation with ILSpy
@@ -90,11 +90,18 @@ A decompiled class can run to hundreds or thousands of lines. Dumping a whole ty
 <skill-dir>/scripts/ilspy-find.sh api MyLibrary.dll Namespace.SomeSmallClass
 
 # Find every place a name is used across the WHOLE assembly, not just one
-# type you already picked — e.g. "where is CashRegister referenced?"
+# type you already picked — e.g. "where is CashRegister referenced?" This
+# is plain text search, so comments and XML doc mentions count as hits too.
 <skill-dir>/scripts/ilspy-find.sh search MyLibrary.dll "CashRegister" 10
+
+# Like search, but only real code references, not comments or XML doc
+# (<see cref="...">) mentions — often a third of search's raw hits are
+# doc-only. Parses the decompiled source with Roslyn instead of grepping
+# text, so it's precise without needing the assembly's dependencies.
+<skill-dir>/scripts/ilspy-find.sh refs MyLibrary.dll CashRegister
 ```
 
-All five subcommands decompile to a temp file (or, for `search`, a temp directory — one file per type) and print only a bounded slice of it (`grep`/`search` cap output at 150 lines no matter how broad the search pattern is — a catch-all pattern like `.` gets truncated, not a full dump). The temp path is always printed, so if you genuinely need more than what was shown, read it directly with a bounded line range (the Read tool's offset/limit, or `peek` with a bigger line count) — don't decompile the same type again, and don't follow up a `grep`/`peek`/`api` call by also `Read`-ing the whole temp file for content you already saw; that shows the model the same code twice for nothing.
+All six subcommands decompile to a temp file (or, for `search`/`refs`, a temp directory — one file per type) and print only a bounded slice of it (`grep`/`search`/`refs` cap output at 150 lines no matter how broad the search pattern is — a catch-all pattern like `.` gets truncated, not a full dump). The temp path is always printed, so if you genuinely need more than what was shown, read it directly with a bounded line range (the Read tool's offset/limit, or `peek` with a bigger line count) — don't decompile the same type again, and don't follow up a `grep`/`peek`/`api` call by also `Read`-ing the whole temp file for content you already saw; that shows the model the same code twice for nothing.
 
 Repeat calls against the same type or assembly reuse a cache (keyed by the file's path, size, and modification time, so a rebuilt DLL at the same path decompiles fresh instead of returning stale results) — decompiling the same type five times across five calls, which is the common pattern, costs one real decompile instead of five.
 

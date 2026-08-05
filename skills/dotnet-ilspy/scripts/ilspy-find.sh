@@ -49,6 +49,19 @@ Usage:
       assembly once (one file per type) and caches it by the assembly's
       path/size/mtime, so repeated searches against the same build reuse
       the decompile instead of redoing it. Output is capped like `grep`.
+      This is plain text search — matches inside comments and XML doc
+      (<see cref="...">) count too, which is often ~1/3 of the hits.
+
+  ilspy-find.sh refs <assembly.dll> <identifier-name>
+      Like `search`, but only real code references — not comments, not
+      XML doc mentions. Uses Roslyn to parse the decompiled source and
+      walk actual identifier tokens rather than grepping text, so a
+      <see cref="...Foo"> doc reference or a "// uses Foo" comment never
+      shows up as a match. Reaches for the same whole-assembly cache as
+      `search`. Prefer this over `search` when you want "who actually
+      calls/uses this" rather than "who mentions this anywhere".
+      First call ever on a machine restores the Roslyn NuGet package —
+      a one-time cost (shared across all assemblies, not per-call).
 
   All subcommands print the decompiled file or directory's temp path to
   stderr. Read that directly (with a bounded line range) if you need more
@@ -179,6 +192,8 @@ cap_output() {
 
 prune_stale_cache
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 cmd="${1:-}"
 case "$cmd" in
   list)
@@ -231,6 +246,21 @@ case "$cmd" in
       exit 1
     }
     printf '%s\n' "$match_out" | cap_output
+    ;;
+  refs)
+    assembly="${2:?assembly.dll required}"
+    ident="${3:?identifier-name required}"
+    require_dnx_ilspycmd
+    dir="$(decompile_assembly_cached "$assembly")"
+    if ! command -v dotnet >/dev/null 2>&1; then
+      echo "error: 'dotnet' is required for refs (runs a small Roslyn-based C# app)." >&2
+      exit 1
+    fi
+    refs_out="$(dotnet run "$SCRIPT_DIR/refs.cs" -- "$dir" "$ident" 2>&1)" || {
+      echo "$refs_out" >&2
+      exit 1
+    }
+    printf '%s\n' "$refs_out" | cap_output
     ;;
   *)
     usage
