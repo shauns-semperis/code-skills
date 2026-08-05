@@ -1,0 +1,26 @@
+{
+  "skill_name": "dotnet-ilspy",
+  "evals": [
+    {
+      "id": 1,
+      "name": "eval-nuget-package",
+      "prompt": "I want to understand how JsonConvert.SerializeObject actually implements reference loop handling internally. The Newtonsoft.Json package should be at ~/.nuget/packages/newtonsoft.json/13.0.3/lib/netstandard2.0/Newtonsoft.Json.dll. Can you decompile it and show me the relevant method?",
+      "expected_output": "Agent runs `dnx ilspycmd` directly against the DLL path, without first running `which ilspycmd` or installing the tool globally.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "eval-local-build-il",
+      "prompt": "Can you show me the IL for the Add method in ./bin/Debug/net8.0/MyLib.dll? I built it locally and want to see what the compiler actually emitted.",
+      "expected_output": "Agent runs `dnx ilspycmd -il` directly against the DLL path, without first running `which ilspycmd` or installing the tool globally.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "eval-vague-internals",
+      "prompt": "How does System.Text.Json's JsonSerializer.Deserialize work under the hood? Can you dig into the actual implementation rather than just docs?",
+      "expected_output": "Agent locates the System.Text.Json assembly and decompiles with `dnx ilspycmd`, without first running `which ilspycmd` or installing the tool globally.",
+      "files": []
+    }
+  ]
+}

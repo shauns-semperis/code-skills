@@ -1,7 +1,7 @@
 ---
 name: dotnet-ilspy
 description: Understand implementation details of .NET code by decompiling assemblies. Use when you want to see how a .NET API works internally, inspect NuGet package source, view framework implementation, or understand compiled .NET binaries.
-allowed-tools: Bash(ilspycmd:*), Bash(dnx ilspycmd:*), Bash(find:*), Bash(dotnet --list-runtimes), Bash(dotnet --list-sdks), Bash(dotnet --version)
+allowed-tools: Bash(ilspycmd:*), Bash(dnx ilspycmd:*), Bash(which ilspycmd), Bash(find:*), Bash(dotnet --list-runtimes), Bash(dotnet --list-sdks), Bash(dotnet --version)
 ---
 
 # .NET Assembly Decompilation with ILSpy
@@ -11,25 +11,26 @@ Use this skill to understand how .NET code works internally by decompiling compi
 ## Prerequisites
 
 - .NET SDK installed
-- ILSpy command-line tool available via one of the following:
-  - `dnx ilspycmd` (if available in your SDK or runtime)
-  - `dotnet tool install --global ilspycmd`
 
-Both forms are shown below. Use the one that works in your environment.
+Run ILSpy with `dnx ilspycmd`. `dnx` downloads and runs the `ilspycmd` NuGet package on demand, so there's no install step and nothing to check first — go straight to `dnx ilspycmd`.
+
+Always put a `--` before ilspycmd's own arguments: `dnx ilspycmd -- <ilspycmd args>`. Without it, `dnx` parses flags it recognizes itself — most importantly `-h`/`--help` and `-v`/`--version` — and swallows them instead of forwarding to ilspycmd, which looks like the tool is broken when it isn't.
+
+If `dnx` isn't available (older SDK), fall back in this order:
+1. `which ilspycmd` — check whether the tool is already installed globally
+2. If not found, `dotnet tool install --global ilspycmd`, then call `ilspycmd` directly
 
 > Note: ILSpyCmd options may vary slightly by version.  
-> Always verify supported flags with `ilspycmd -h`.
+> Always verify supported flags with `dnx ilspycmd -- -h`.
 
 ## Quick start
 
 ```bash
 # Decompile an assembly to stdout
-ilspycmd MyLibrary.dll
-# or
-dnx ilspycmd MyLibrary.dll
+dnx ilspycmd -- MyLibrary.dll
 
 # Decompile to an output folder
-ilspycmd -o output-folder MyLibrary.dll
+dnx ilspycmd -- -o output-folder MyLibrary.dll
 ```
 
 ## Common .NET Assembly Locations
@@ -73,23 +74,25 @@ dotnet --list-sdks
 ### Basic decompilation
 
 ```bash
-ilspycmd MyLibrary.dll
-ilspycmd -o ./decompiled MyLibrary.dll
-ilspycmd -p -o ./project MyLibrary.dll
+dnx ilspycmd -- MyLibrary.dll
+dnx ilspycmd -- -o ./decompiled MyLibrary.dll
+dnx ilspycmd -- -p -o ./project MyLibrary.dll
 ```
 
 ### Targeted decompilation
 
 ```bash
-ilspycmd -t Namespace.ClassName MyLibrary.dll
-ilspycmd -lv CSharp12_0 MyLibrary.dll
+dnx ilspycmd -- -t Namespace.ClassName MyLibrary.dll
+dnx ilspycmd -- -lv CSharp12_0 MyLibrary.dll
 ```
 
 ### View IL code
 
 ```bash
-ilspycmd -il MyLibrary.dll
+dnx ilspycmd -- -il MyLibrary.dll
 ```
+
+If you fell back to a global tool install, drop the `dnx ` prefix from these commands.
 
 ## Notes on modern .NET builds
 
