@@ -5,3 +5,7 @@
 node_modules/
 inspo
 triage/
+
+# skill-creator eval workspaces are scratch output from testing/iterating on
+# a skill, not something to commit by default — stage explicitly if wanted.
+*-workspace/
