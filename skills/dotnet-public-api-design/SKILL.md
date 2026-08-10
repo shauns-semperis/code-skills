@@ -79,6 +79,8 @@ When you need to change behavior, add new members, mark old ones `[Obsolete]`, l
 - Upgrades are non-breaking by default
 - Your API becomes a contract, not a moving target
 
+**Chesterton's Fence**: before removing or changing a public member, find out why it exists. Assume someone depends on it. If it genuinely needs to change: propose it publicly, document a migration path, run a deprecation period, then ship the removal in a planned release — never as a surprise in a patch.
+
 ---
 
 ## Naming Conventions for Public APIs
@@ -215,7 +217,12 @@ internal class OrderProcessor { }  // Was: public
 
 // ADD required parameters without defaults
 public void Process(Order order, ILogger logger);  // Breaks callers!
+
+// ADD an optional parameter to an EXISTING method — source-compatible, but binary-breaking
+public void Process(Order order, CancellationToken ct = default);  // Was: Process(Order order)
 ```
+
+**The optional-parameter trap**: a default value is baked into the *caller's* compiled IL at compile time, not read from the callee at runtime. Adding a new optional parameter to a method that already shipped is safe for callers who *recompile*, but a caller compiled against the old signature throws `MissingMethodException` when it runs against the new binary without recompiling. This matters for libraries where callers can't always recompile in lockstep with a new NuGet version (plugin hosts, binary-only distribution). Add a new overload instead — see [Safe Changes](#safe-changes-any-release) above — when binary compatibility must hold.
 
 ### Deprecation Pattern
 
@@ -239,62 +246,7 @@ For distributed systems, serialized data must work across versions. Require both
 - **Backward compatibility**: Old writers → New readers (readers must handle old format)
 - **Forward compatibility**: New writers → Old readers (writers must avoid new features during rollout)
 
-### Four-Phase Rollout Strategy
-
-**Phase 1: Read-side support** (release v1.1)
-Deploy readers that understand BOTH old and new message formats. Old and new writers still produce v1 format.
-
-```csharp
-public object Deserialize(byte[] data, string manifest) => manifest switch
-{
-    "Heartbeat" => DeserializeHeartbeatV1(data),
-    "HeartbeatV2" => DeserializeHeartbeatV2(data),  // Can read new, but not yet producing it
-    _ => throw new NotSupportedException()
-};
-```
-
-**Phase 2: Write-side support** (release v1.2, AFTER all readers upgraded)
-Only after all nodes read both formats, enable writers to produce new format. Old format still readable.
-
-**Phase 3: Default to new format** (release v2.0, next major)
-Make new format the default. Old format still read for backward compatibility.
-
-**Phase 4: Remove old format** (release v3.0, only in next major)
-Drop support for old format entirely.
-
-**Key principle**: Always deploy readers before writers. If a new node writes but old nodes haven't upgraded their readers, you've broken production.
-
-### Defensive Serialization
-
-```csharp
-public sealed class WidgetDto
-{
-    [JsonPropertyName("id")]
-    public int Id { get; init; }
-
-    [JsonPropertyName("name")]
-    public required string Name { get; init; }
-
-    [JsonPropertyName("category")]
-    public string? Category { get; init; }  // Null if missing — gracefully handles removal
-
-    [JsonPropertyName("priority")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    public int Priority { get; init; }  // Don't send default — receivers ignore missing
-
-    // When reading old messages, this new field will be null:
-    [JsonPropertyName("sku")]
-    public string? Sku { get; init; }
-}
-```
-
-**Critical patterns:**
-1. **Use `[JsonPropertyName]` always** — names your contract separately from code, so renaming code doesn't break wire format
-2. **Make new properties nullable** — old messages won't have them
-3. **Use `[JsonIgnore(WhenWritingDefault)]`** — don't pollute messages with default values
-4. **Test deserialization of old format** — deserialize real v1 messages to confirm new code handles them
-
-**Enum serialization**: Use `[JsonConverter(typeof(JsonStringEnumConverter))]` for string-based enums. Integer-based enums break when members are reordered or a new value is inserted mid-list.
+Roll out changes in phases — readers before writers — and prefer nullable new properties, explicit `[JsonPropertyName]`, and schema-based formats over reflection-based ones. Full rollout phases, a defensive-serialization example, and a format-compatibility comparison are in [references/wire-format-evolution.md](references/wire-format-evolution.md).
 
 ---
 
@@ -409,20 +361,59 @@ The second approach (default implementations) is safer if all implementations ar
 
 ---
 
-## API Approval Testing
+## Encapsulation Patterns
 
-Prevent accidental breaking changes with automated surface testing.
+Limit what counts as your public API surface. A smaller surface means fewer compatibility promises to keep.
+
+### Sealing Classes
 
 ```csharp
-[Fact]
-public Task ApprovePublicApi()
+// DO: seal classes not designed for inheritance
+public sealed class OrderProcessor { }
+
+// DON'T: leave a class unsealed by accident
+public class OrderProcessor { }  // Users may inherit, blocking future changes
+```
+
+An unsealed class implicitly promises that its virtual members and constructors are stable for subclassing. Seal by default; only leave a class open when extension is a deliberate design goal.
+
+### Marking Non-Public-Feeling APIs
+
+Some types must be `public` for DI or serialization but aren't meant for direct use. Mark them clearly:
+
+```csharp
+namespace MyLibrary.Internal
 {
-    var api = typeof(MyLibrary.PublicClass).Assembly.GeneratePublicApi();
-    return Verify(api);
+    public class InternalHelper { }  // Public for wiring, not for users
 }
 ```
 
-PR reviewers see exact API surface changes in `.verified.txt` diffs. Breaking changes are immediately visible.
+Document the convention once: "types in `.Internal` namespaces may change between any releases without notice."
+
+### Interface Segregation
+
+```csharp
+// DO: small, focused interfaces
+public interface IOrderReader
+{
+    Order? GetById(OrderId id);
+}
+
+public interface IOrderWriter
+{
+    Task SaveAsync(Order order);
+}
+
+// DON'T: one large interface
+public interface IOrderRepository
+{
+    Order? GetById(OrderId id);
+    Task SaveAsync(Order order);
+    // Adding a method here breaks every implementation
+}
+```
+
+Small interfaces are cheaper to extend later — a new capability can be a new interface rather than a breaking change to an existing one.
 
 ---
 
