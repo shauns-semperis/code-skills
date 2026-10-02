@@ -1,451 +1,215 @@
 # C# Documentation Examples
 
-Detailed before/after patterns from baseline testing and Microsoft .NET conventions.
+Prefer no comment unless it gives a maintainer information that is not clear from the code. The examples below include patterns based on real application code: documenting external-system semantics and explaining why a particular implementation is required.
 
-## Summary Patterns
+## Omit Obvious Documentation
 
-### ❌ WRONG: Verbose, Multiple Actions
-
-```csharp
-/// <summary>
-/// Asynchronously processes data from a stream and returns the results to the caller.
-/// </summary>
-public async Task<ProcessingResult> ProcessDataAsync(Stream input, CancellationToken cancellationToken)
-```
-
-**Problems:**
-- "and returns the results" - redundant with `<returns>`
-- "to the caller" - obvious filler
-- "Asynchronously" - redundant with `async Task<T>` signature
-
-### ✅ CORRECT: Concise, Single Action
+❌ **Redundant:** The signature already says that the method deletes a widget by identifier.
 
 ```csharp
 /// <summary>
-/// Processes data from the input stream.
+/// Deletes a widget by its ID.
 /// </summary>
-public async Task<ProcessingResult> ProcessDataAsync(Stream input, CancellationToken cancellationToken)
+Task DeleteAsync(Guid id);
 ```
 
----
-
-## Parameter Descriptions
-
-### ❌ WRONG: Over-Detailed, Lists Properties
-
-```csharp
-/// <param name="validationParameters">The token validation parameters containing issuer, audience, signing keys, and other validation settings.</param>
-```
-
-**Problem:** Lists internal properties of the parameter type. Those details belong in `TokenValidationParameters` documentation.
-
-### ✅ CORRECT: Purpose-Focused
-
-```csharp
-/// <param name="validationParameters">Parameters for token validation.</param>
-```
-
-**OR even simpler:**
-
-```csharp
-/// <param name="validationParameters">The validation parameters.</param>
-```
-
----
-
-## Return Descriptions
-
-### ❌ WRONG: Redundant Boilerplate
-
-```csharp
-/// <returns>
-/// A task that represents the asynchronous operation. The task result contains a 
-/// TokenValidationResult with the processed data and success status.
-/// </returns>
-```
-
-**Problems:**
-- "A task that represents the asynchronous operation" - boilerplate for all `Task<T>` methods
-- "The task result contains" - obvious from signature
-
-### ✅ CORRECT: Value Description Only
-
-```csharp
-/// <returns>The validation result and status.</returns>
-```
-
-**OR simpler when return type is self-documenting:**
-
-```csharp
-/// <returns>The validation result.</returns>
-```
-
----
-
-## Property Documentation
-
-### ❌ WRONG: Obvious "Gets or Sets"
+❌ **Task-specific:** Do not document the motivating task or consumer.
 
 ```csharp
 /// <summary>
-/// Gets or sets the user's name.
+/// Deletes widgets so the cleanup service can remove expired records.
 /// </summary>
-public string Name { get; set; }
-
-/// <summary>
-/// Gets or sets the user's email address.
-/// </summary>
-public string Email { get; set; }
+Task DeleteAsync(Guid id);
 ```
 
-**Problem:** "Gets or sets" adds zero value. Property name already communicates purpose.
-
-### ✅ CORRECT: Skip or Be Minimal
-
-```csharp
-// Option 1: No documentation (acceptable for obvious DTOs/models)
-public string Name { get; set; }
-public string Email { get; set; }
-
-// Option 2: Minimal if clarification adds value
-/// <summary>Display name.</summary>
-public string Name { get; set; }
-
-/// <summary>Primary contact email.</summary>
-public string Email { get; set; }
-```
-
----
-
-## Type References
-
-### ❌ WRONG: Plain Text Type Names
+✅ **Contract-focused:** If the behavior has important semantics, document those instead.
 
 ```csharp
 /// <summary>
-/// Sends an HttpRequestMessage and returns HttpResponseMessage.
+/// Permanently deletes the widget.
 /// </summary>
-public HttpResponseMessage Send(HttpRequestMessage request)
+/// <remarks>
+/// Deletion is idempotent. Deleting an identifier that does not exist succeeds.
+/// </remarks>
+Task DeleteAsync(Guid id);
 ```
 
-**Problem:** Type names as plain text prevent IDE navigation and doc generation tools from creating links.
+❌ **Narrates the code:** Skip comments that translate an identifier or operation into prose.
 
-### ✅ CORRECT: Use `<see cref="">`
+```csharp
+// Gets the customer by ID.
+var customer = await repository.GetByIdAsync(customerId);
+```
+
+✅ **Better:** Omit the comment. Add an inline comment only if there is a non-obvious reason for the operation.
+
+## Document Observable External-System Semantics
+
+An API summary can state the operation while remarks explain surprising behavior callers need to know:
 
 ```csharp
 /// <summary>
-/// Sends an HTTP request.
+/// Terminates a running or pending workflow instance.
 /// </summary>
-/// <param name="request">The <see cref="HttpRequestMessage"/> to send.</param>
-/// <returns>The <see cref="HttpResponseMessage"/> from the server.</returns>
-public HttpResponseMessage Send(HttpRequestMessage request)
+/// <remarks>
+/// The workflow engine may complete this call without error when the instance does not exist or is
+/// already terminal. Check the instance status when the outcome must be confirmed.
+/// </remarks>
+Task TerminateInstanceAsync(string instanceId, string reason);
 ```
 
----
+The remarks describe behavior observable by callers and the consequence for their use of the API. They do not narrate the implementation or its history.
 
-## Keywords and Literals
+## Explain Why, Not What
 
-### ❌ WRONG: Plain Text Keywords
+✅ **Explains why:** Useful inline comments explain why a less careful implementation would be incorrect.
 
 ```csharp
-/// <returns>
-/// true if the value is null or empty; otherwise, false.
-/// </returns>
+// IsInRole, not HasClaim: a role claim counts only when its identity uses the configured role
+// claim type, which is what role authorization checks.
+var missingRoles = roles.Where(role => !principal.IsInRole(role)).ToList();
 ```
 
-**Problem:** Keywords as plain text instead of formatted.
-
-### ✅ CORRECT: Use `<see langword="">`
+❌ **Narrates what:** This only describes the call.
 
 ```csharp
-/// <returns>
-/// <see langword="true"/> if <paramref name="value"/> is <see langword="null"/> or empty; otherwise, <see langword="false"/>.
-/// </returns>
+// Check whether the principal has each role.
+var missingRoles = roles.Where(role => !principal.IsInRole(role)).ToList();
 ```
 
-### ✅ ALSO CORRECT: Use `<c>` for Identifiers in Prose
+If a comment is needed to explain a surprising choice, keep the explanation close to the code it constrains.
+
+## Keep Constraints Timeless
+
+❌ **Historical:** Avoid comments that record when or why code was introduced.
+
+```csharp
+// We now use ordinal comparison to fix duplicate key handling.
+```
+
+✅ **Timeless:** If the reason is a durable constraint, describe that constraint.
+
+```csharp
+// Keys are protocol identifiers and must be compared independently of the current culture.
+```
+
+Similarly, avoid references to a feature, ticket, or current consumer. State permanent contract or compatibility requirements directly.
+
+## A Business Rule Is Not a Technical Constraint
+
+A rule's reason can read as a general-sounding fact and still be someone's commercial or compliance rationale rather than a durable fact about the system. This is easy to miss in a shared method: the code genuinely becomes general (every caller gets the rule), but the XML documentation explaining *why* the rule exists stays tied to the one customer, partner, or deal that caused it to be added. This matters for XML documentation specifically — it is read by a consumer with no history on the code. An inline comment making the same point, or linking to the ticket that introduced the rule, is normal and not a problem; see "Inline Comments Have More Latitude" below.
+
+❌ **The XML doc reads as general, but states one partner's contract terms:** This is a shared eligibility check used by every checkout channel, not only the partner integration that needed this rule added.
 
 ```csharp
 /// <remarks>
-/// The <c>sub</c> claim must be present and the <c>nonce</c> claim must match if provided.
+/// An order of $250 or more does not qualify when it ships to a PO box, because the
+/// carrier surcharge for PO box deliveries above that value outweighs the shipping margin.
 /// </remarks>
-```
-
----
-
-## Remarks Usage
-
-### ❌ WRONG: XML Wall, Restates Code Logic
-
-```csharp
-/// <summary>
-/// Validates an ID token.
-/// </summary>
-/// <remarks>
-/// <para>This method performs standard JWT validation and additional OpenID Connect-specific validations:</para>
-/// <list type="bullet">
-/// <item><description>The 'sub' claim must be present and non-empty.</description></item>
-/// <item><description>If expectedNonce is provided, the token's nonce claim must match exactly.</description></item>
-/// <item><description>If the token has multiple audiences, the 'azp' claim must equal the validated audience.</description></item>
-/// <item><description>If accessToken is provided and the token contains an 'at_hash' claim, the hash must be valid.</description></item>
-/// </list>
-/// </remarks>
-public async Task<TokenValidationResult> ValidateIdTokenAsync(...)
+public static bool IsEligibleForFreeShipping(Order order)
 {
-    // Code clearly shows these validations with inline comments
+    if (order.Subtotal < 50m)
+    {
+        return false;
+    }
+
+    if (order.ShippingAddress.IsPoBox && order.Subtotal >= 250m)
+    {
+        return false;
+    }
+
+    return true;
 }
 ```
 
-**Problems:**
-- Wall of XML tags hard to read
-- Four bullet points for what could be 1-2 sentences
-- Restates what inline code comments already explain
-- Doesn't work out of context (IntelliSense truncates)
-
-### ✅ CORRECT: Concise or Skip Entirely
-
-**Option 1: No `<remarks>` (preferred when code comments are clear)**
+✅ **The XML doc states the rule, not the deal behind it:** The dollar threshold and the condition are the contract; the surcharge economics that produced them belong in a commit message or linked ticket, not in documentation a new cloner reads with no history.
 
 ```csharp
-/// <summary>
-/// Validates an OpenID Connect ID token.
-/// </summary>
-public async Task<TokenValidationResult> ValidateIdTokenAsync(...)
-```
-
-**Option 2: Brief context if valuable**
-
-```csharp
-/// <summary>
-/// Validates an OpenID Connect ID token.
-/// </summary>
 /// <remarks>
-/// Validates standard JWT claims plus OpenID Connect requirements (sub, nonce, azp, at_hash).
+/// Free shipping does not apply to orders of $250 or more that ship to a PO box.
 /// </remarks>
-```
-
-**Option 3: Reference spec for non-obvious context**
-
-```csharp
-/// <summary>
-/// Validates an OpenID Connect ID token.
-/// </summary>
-/// <remarks>
-/// Implements OpenID Connect Core 1.0 §3.1.3.7 validation requirements.
-/// </remarks>
-```
-
----
-
-## Exception Documentation
-
-### ❌ WRONG: Verbose "Thrown when", Multiple Parameters
-
-```csharp
-/// <exception cref="ArgumentNullException">Thrown when <paramref name="httpClient"/> is null.</exception>
-/// <exception cref="ArgumentException">Thrown when <paramref name="tokenEndpoint"/>, <paramref name="clientId"/>, or <paramref name="refreshToken"/> is null or whitespace.</exception>
-```
-
-**Problems:**
-- "Thrown when" is redundant (that's what `<exception>` means)
-- Multiple parameters in one exception tag loses precision
-- "is null" instead of `<see langword="null"/>`
-
-### ✅ CORRECT: Concise, One Exception Per Parameter
-
-```csharp
-/// <exception cref="ArgumentNullException"><paramref name="httpClient"/> is <see langword="null"/>.</exception>
-/// <exception cref="ArgumentException"><paramref name="tokenEndpoint"/> is <see langword="null"/> or empty.</exception>
-/// <exception cref="ArgumentException"><paramref name="clientId"/> is <see langword="null"/> or empty.</exception>
-/// <exception cref="ArgumentException"><paramref name="refreshToken"/> is <see langword="null"/> or empty.</exception>
-```
-
-### ✅ ACCEPTABLE: Grouped When Many Similar Validations
-
-```csharp
-/// <exception cref="ArgumentException">A required parameter is <see langword="null"/> or empty.</exception>
-```
-
-**Use grouped exceptions only when:**
-- Many similar validations (5+)
-- Precision isn't critical to API understanding
-- Keeps documentation scannable
-
----
-
-## Real Microsoft .NET Examples
-
-### String.IsNullOrEmpty
-
-```csharp
-/// <summary>
-/// Indicates whether the specified string is <see langword="null"/> or an empty string ("").
-/// </summary>
-/// <param name="value">The string to test.</param>
-/// <returns>
-/// <see langword="true"/> if the <paramref name="value"/> parameter is <see langword="null"/> or an empty string (""); otherwise, <see langword="false"/>.
-/// </returns>
-public static bool IsNullOrEmpty([NotNullWhen(false)] string? value)
+public static bool IsEligibleForFreeShipping(Order order)
 {
-    return value == null || value.Length == 0;
+    if (order.Subtotal < 50m)
+    {
+        return false;
+    }
+
+    // Carrier surcharges on PO box deliveries make this unprofitable above the threshold (see PART-3307).
+    if (order.ShippingAddress.IsPoBox && order.Subtotal >= 250m)
+    {
+        return false;
+    }
+
+    return true;
 }
 ```
 
-**Key points:**
-- One-sentence summary
-- Uses `<see langword="null"/>`
-- Uses `<paramref>` to reference parameter
-- Return description is precise
-- No `<remarks>` - not needed
+Note what moved and what didn't: the `<remarks>` dropped the surcharge/margin rationale entirely, but the inline comment keeps it, including the ticket reference — that's fine, because it's there for a maintainer reading this file, not for a consumer of generated docs.
 
----
+## Inline Comments Have More Latitude
 
-### Enumerable.SelectMany
+Inline comments are for whoever is reading this file, not for a package consumer or generated docs. A reference to a ticket, work item, or PR for traceability is normal and welcome, not a defect to fix.
+
+```csharp
+// Per SEC-771, enterprise SSO accounts must have non-essential categories muted by
+// default before activation, for the customer's security compliance audit.
+private static readonly IReadOnlySet<NotificationCategory> EnterpriseDefaultMutedCategories = ...
+```
+
+This inline comment is fine as written. What would not be fine is the same sentence inside the class's or member's XML `<summary>`, since that is what a new cloner sees with no history:
 
 ```csharp
 /// <summary>
-/// Projects each element to an <see cref="IEnumerable{T}"/> and flattens the result.
+/// Default mute policy mapping each account tier to its non-essential notification categories.
 /// </summary>
-/// <typeparam name="TSource">The type of elements in <paramref name="source"/>.</typeparam>
-/// <typeparam name="TResult">The type of elements returned by <paramref name="selector"/>.</typeparam>
-/// <param name="source">The sequence to project.</param>
-/// <param name="selector">The transform function.</param>
-/// <returns>A flattened sequence of results.</returns>
+public sealed class DefaultNotificationMutePolicy : IDefaultNotificationMutePolicy
+```
+
+An inline comment, a commit message, a design doc, or a linked ticket are all fine places for the business reason behind a threshold or a tier's default. The XML doc is not, since every future caller of the shared code — including ones with no access to that ticket or history — reads it as a statement about the system itself.
+
+## XML Documentation That Adds Meaning
+
+✅ **Adds contract information:** Use XML references to connect useful prose to API symbols. Document parameter constraints and result semantics when they are not apparent from the signature.
+
+```csharp
+/// <summary>
+/// Parses a TCP port number.
+/// </summary>
+/// <param name="value">The decimal port number, from 1 through 65535.</param>
+/// <returns>The parsed port.</returns>
+/// <exception cref="FormatException"><paramref name="value"/> is not a valid decimal port number.</exception>
+public static int ParsePort(string value);
+```
+
+❌ **Boilerplate:** For a self-explanatory method, omit obvious parameter and return documentation.
+
+```csharp
+/// <param name="customerId">The customer ID.</param>
+/// <returns>A task representing the asynchronous operation.</returns>
+Task<Customer?> GetAsync(Guid customerId);
+```
+
+✅ **Precise exception condition:** Use `<exception>` to state the condition without “Thrown when.”
+
+```csharp
 /// <exception cref="ArgumentNullException">
-/// <paramref name="source"/> is <see langword="null"/>.
-/// -or-
-/// <paramref name="selector"/> is <see langword="null"/>.
+/// <paramref name="value"/> is <see langword="null"/>.
 /// </exception>
-public static IEnumerable<TResult> SelectMany<TSource, TResult>(
-    this IEnumerable<TSource> source,
-    Func<TSource, IEnumerable<TResult>> selector)
+void Process(string value);
 ```
 
-**Key points:**
-- Uses `<typeparam>` for generics
-- Uses `<typeparamref>` in type parameter descriptions
-- Uses `<see cref="">` for type references
-- Concise parameter and return descriptions
-- Exception uses "-or-" to separate multiple conditions
+## Before Adding `<remarks>`
 
----
+✅ **Useful remarks:** Use remarks only when necessary to understand a contract or preserve a non-obvious constraint. Prefer a short explanation or an authoritative specification reference over a list of implementation steps.
 
-### String.CopyTo
+❌ **Implementation narration:** Avoid a list that duplicates validation already evident in the implementation.
 
 ```csharp
-/// <summary>
-/// Copies the contents of this string into the destination span.
-/// </summary>
-/// <param name="destination">The span into which to copy this string's contents.</param>
-/// <exception cref="ArgumentException">The destination span is shorter than the source string.</exception>
-public void CopyTo(Span<char> destination)
-```
-
-**Key points:**
-- One sentence summary
-- Exception describes the condition, not "Thrown when"
-- No `<remarks>` needed
-
----
-
-## Before/After: Real-World Example
-
-### Before (Baseline Agent Output - Too Verbose)
-
-```csharp
-/// <summary>
-/// Validates an OpenID Connect ID token according to the OpenID Connect Core 1.0 specification.
-/// </summary>
-/// <param name="idToken">The ID token to validate.</param>
-/// <param name="validationParameters">The token validation parameters containing issuer, audience, signing keys, and other validation settings.</param>
-/// <param name="expectedNonce">The nonce value sent in the original authentication request. If provided, the ID token must contain a matching nonce claim.</param>
-/// <param name="accessToken">The access token issued alongside the ID token. If provided, the at_hash claim will be validated if present.</param>
-/// <param name="cancellationToken">A token to monitor for cancellation requests.</param>
-/// <returns>
-/// A <see cref="TokenValidationResult"/> indicating whether the token is valid. If validation fails, the result contains details about the failure.
-/// </returns>
 /// <remarks>
-/// <para>This method performs standard JWT validation and additional OpenID Connect-specific validations:</para>
-/// <list type="bullet">
-/// <item><description>The 'sub' claim must be present and non-empty.</description></item>
-/// <item><description>If <paramref name="expectedNonce"/> is provided, the token's nonce claim must match exactly.</description></item>
-/// <item><description>If the token has multiple audiences, the 'azp' claim must equal the validated audience.</description></item>
-/// <item><description>If <paramref name="accessToken"/> is provided and the token contains an 'at_hash' claim, the hash must be valid.</description></item>
-/// </list>
+/// The method checks that the subject exists, compares the nonce, validates the audience,
+/// and checks the access-token hash.
 /// </remarks>
-public async Task<TokenValidationResult> ValidateIdTokenAsync(...)
 ```
 
-**Problems:**
-- Over-detailed parameter descriptions listing properties
-- Verbose `<returns>` with redundant context about failures
-- XML wall in `<remarks>` with bullet list
-- `<remarks>` restates what code already shows with inline comments
-
-### After (Following Skill - Concise and Clear)
-
-```csharp
-/// <summary>
-/// Validates an OpenID Connect ID token.
-/// </summary>
-/// <param name="idToken">The token to validate.</param>
-/// <param name="validationParameters">Parameters for token validation.</param>
-/// <param name="expectedNonce">Optional nonce to verify against the token's <c>nonce</c> claim.</param>
-/// <param name="accessToken">Optional access token for <c>at_hash</c> validation.</param>
-/// <param name="cancellationToken">Cancellation token.</param>
-/// <returns>The validation result.</returns>
-/// <remarks>
-/// Implements OpenID Connect Core 1.0 §3.1.3.7 ID Token Validation requirements.
-/// </remarks>
-public async Task<TokenValidationResult> ValidateIdTokenAsync(...)
-```
-
-**Improvements:**
-- Summary shortened (spec reference moved to remarks)
-- Parameter descriptions concise, purpose-focused
-- `<returns>` minimal (return type is self-documenting)
-- `<remarks>` is one sentence referencing spec (non-obvious context)
-- Uses `<c>` for claim names in prose
-- Readable as plain text
-- Works out of context in IntelliSense
-
----
-
-## When to Skip Documentation Entirely
-
-These don't need XML documentation:
-
-### Obvious Properties in DTOs/Models
-
-```csharp
-public class User
-{
-    public string Name { get; set; }
-    public string Email { get; set; }
-    public int Age { get; set; }
-}
-```
-
-### Private Implementation Methods
-
-```csharp
-private void InternalHelper() { }
-```
-
-### Methods Where Code + Inline Comments Are Sufficient
-
-```csharp
-public void Process()
-{
-    // Validate input - ensures all required fields are present
-    ValidateInput();
-    
-    // Transform data - converts to internal format
-    TransformData();
-    
-    // Persist - saves to database with transaction
-    PersistData();
-}
-```
-
-If inline comments clearly explain the logic and there's no public API contract to document, XML docs add no value.
+If those checks are part of an external contract, describe the contract or cite its specification; otherwise, let the code explain its own steps.

@@ -1,106 +1,78 @@
 ---
 name: documenting-csharp-code
-description: Use when writing or reviewing C# XML documentation comments - prevents verbose summaries, obvious property docs, XML walls in remarks, ensures proper cref/paramref/langword tags
+description: Guides C# developers in writing and reviewing comments and XML documentation that remain useful, durable, contract-focused, and concise
 ---
 
 # Documenting C# Code
 
-## Overview
-
-C# XML documentation should be **concise, focused on contract over implementation, and use proper XML cross-reference tags**. Follow Microsoft .NET conventions: one-sentence summaries, readable as plain text, works out of context (IntelliSense), and skip obvious documentation.
+Write for a maintainer who sees the completed code without knowing the task or implementation history. Comments and documentation describe the code as it exists; they are not a changelog.
 
 ## When to Use
 
-Use when:
-- Writing XML documentation (`///`) for C# public APIs
-- Reviewing C# documentation for verbosity or clarity issues
-- Documenting libraries, SDKs, or internal application APIs
+Use when writing or reviewing C# comments or XML documentation, especially public API documentation.
 
-When NOT to use:
-- Private implementation methods (documentation optional)
-- DTOs/models with self-explanatory properties
-- Code with comprehensive inline comments that make XML docs redundant
+## Decide Whether to Comment
 
-## Core Principles
+Prefer self-explanatory code. Before writing a comment, consider whether clearer names, types, structure, or control flow would explain the code better.
 
-1. **Concise by default** - One sentence. No filler words.
-2. **Contract, not implementation** - What it does for the caller, not how
-3. **Use XML tags** - `<see cref="">`, `<paramref>`, `<typeparamref>`, `<see langword="">`
-4. **Readable as text** - Avoid XML walls. If you can't read it easily, it's too verbose.
-5. **Works out of context** - IntelliSense shows truncated tooltips; essentials go in `<summary>`
-6. **Use `<remarks>` sparingly** - Only for non-obvious context. Most methods don't need it.
-7. **Skip obvious documentation** - Self-explanatory code needs no comment
+Omit a comment when it only:
 
-## Quick Reference
+- Restates a name, type, signature, or obvious control flow.
+- Describes what the next line does.
+- Documents an obvious property, constructor, or CRUD operation.
+- Exists to satisfy documentation coverage.
 
-| Element | Pattern | Example |
-|---------|---------|---------|
-| Type reference | `<see cref="TypeName"/>` | `<see cref="HttpResponseMessage"/>` |
-| Parameter reference | `<paramref name="param"/>` | `<paramref name="request"/>` |
-| Type parameter | `<typeparamref name="T"/>` | `<typeparamref name="TSource"/>` |
-| Keywords | `<see langword="keyword"/>` | `<see langword="null"/>`, `<see langword="true"/>` |
-| Inline code/identifiers | `<c>code</c>` | `<c>sub</c>`, `<c>at_hash</c>` |
-| Summary | One sentence, period | `/// <summary>Validates the token.</summary>` |
-| Returns | Describe value, not "returns" | `/// <returns>The validation result.</returns>` |
-| Exception | **NEVER "Thrown when"** | `/// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>` |
-| Remarks | Rare; non-obvious context only | `/// <remarks>Implements RFC 6749 §6.</remarks>` |
+Add a comment only when it provides durable information a maintainer cannot readily get from the code. Useful subjects include non-obvious constraints, invariants, compatibility requirements, external-system behavior, edge cases, ordering or concurrency guarantees, and externally observable semantics.
 
-## Common Mistakes
+## Keep XML Documentation Timeless
 
-| Mistake | Fix |
-|---------|-----|
-| "Gets or sets the X" | Skip docs or use "X." |
-| "Returns a Y that contains Z" | "Z result." |
-| "Asynchronously does X and returns Y" | "Does X." (async/returns obvious) |
-| "Does X and returns Y" | "Does X." (return type shows Y) |
-| "A task representing the asynchronous operation" | Delete; obvious from `Task<T>` signature |
-| Plain text type names | Use `<see cref="">` |
-| Plain text `null`/`true`/`false` | Use `<see langword="">` |
-| Multi-sentence summaries | One sentence maximum |
-| Explaining implementation in `<summary>` | Move to `<remarks>` or delete |
-| Multi-paragraph `<remarks>` with lists | One sentence or skip entirely |
-| `<remarks>` that restate code logic | Delete or reference spec/docs |
-| ANY "Thrown when" in exceptions | ALWAYS delete; 100% redundant |
-| Multiple params in one `<exception>` tag | Separate for precision |
-| Over-detailed param descriptions | Purpose, not properties |
+XML documentation is read by a consumer with no history: a new cloner, a package user, generated docs, IntelliSense. It must be evergreen on its own, with no session or task context attached.
 
-## Red Flags - Stop and Simplify
+Do not refer to the current task, prompt, ticket, pull request, implementation history, motivating feature, or a caller or workflow that is not part of the contract. Avoid changelog phrasing such as “adds support for,” “now supports,” “added for,” “needed by,” and “changed to.”
 
-These indicate documentation is too verbose:
+Describe the capability or permanent constraint instead of who requested or uses it. Preserve historical context only when it explains an enduring, technical requirement, such as a wire-compatibility constraint — a fact about the protocol or system that holds regardless of which caller exercises it. Link to an authoritative specification when it is needed to understand or preserve that requirement.
 
-- **More than one sentence in `<summary>`**
-- **"Gets or sets" for obvious properties**
-- **ANY "and returns" in summary** - Return is obvious from signature and `<returns>` tag
-- **"A task representing the asynchronous operation"** - Boilerplate; always delete
-- **Lists or multiple `<para>` in `<remarks>`** - Should be one sentence
-- **"This method performs..."** - Filler; delete it
-- **ANY "Thrown when" in exceptions** - ALWAYS delete; it's 100% redundant
-- **Restating method signature in words** - Parameter names already document this
+A commercial or compliance rationale is not this kind of requirement, even when it is phrased as a general-sounding fact: a partner's contract terms, a customer's audit requirement, a margin or surcharge calculation, or a specific deal. This applies to shared code as much as to code written for one caller — a rule added for one partner or customer, once it lives in a method every caller shares, must read as a platform rule in its XML documentation, not as that caller's reason for the rule. State the rule the code enforces (the threshold, the condition, the exception) and leave out whose contract, audit, or cost model produced it.
 
-**All of these mean: Simplify. Make it concise.**
+This strictness is specific to XML documentation. Inline comments are a different audience and a different rule — see below.
 
-## Rationalizations
+## Choose the Right Documentation
 
-Agents rationalize violations with these excuses:
+### XML documentation
 
-| Excuse | Reality |
-|--------|---------|
-| "But 'and returns X' adds specific info" | No. Return type + `<returns>` tag already document this. Delete "and returns". |
-| "The return behavior is non-obvious" | Then explain it in `<returns>`, not `<summary>`. |
-| "Async methods need 'A task representing...'" | No. Every `Task<T>` method returns a task. Delete this boilerplate. |
-| "One sentence is too limiting" | Microsoft .NET uses one sentence. Follow the pattern. |
+Document public API contracts: behavior observable by callers, meaningful parameter or return semantics, side effects, exceptions, idempotency, ordering, concurrency, ownership, and limitations. Do not document private implementation details as public contract.
 
-**If you're rationalizing verbosity, you're violating the skill. Simplify.**
+Do not generate XML for every public symbol mechanically. A self-explanatory signature may need no documentation. In particular, omit parameter text that merely repeats a parameter name or type, and omit boilerplate such as “A task representing the asynchronous operation.” When documentation adds value, keep the summary concise and make each tag add information not already apparent from the signature.
 
-## Detailed Examples
+Use XML references where they clarify prose:
 
-See [examples.md](examples.md) for detailed before/after comparisons covering:
-- Summary patterns
-- Parameter descriptions
-- Return descriptions
-- Property documentation
-- Type references
-- Keywords and literals
-- Remarks usage
-- Exception documentation
-- Real Microsoft .NET examples
+- `<see cref="TypeName"/>` for types and members.
+- `<paramref name="value"/>` and `<typeparamref name="T"/>` for parameters.
+- `<see langword="null"/>`, `<see langword="true"/>`, and other C# keywords.
+- `<c>identifier</c>` for code identifiers, protocol values, and literals.
+
+Use `<remarks>` only for contract context that does not belong in the summary. Keep it brief; do not repeat the summary, list implementation steps, or reproduce details already clear from code.
+
+Describe exception conditions directly in `<exception>` text; omit “Thrown when.” Use separate exception tags when the conditions need to be distinguished.
+
+### Inline comments
+
+Inline (`//`) comments are read by a maintainer browsing the same codebase, not by a consumer of generated documentation — a different audience from XML docs, with more latitude. A trailing reference to a ticket, work item, or PR (for example `// see JIRA-1234`) is a legitimate way to link a line to its history and is not a problem to fix.
+
+Explain why the implementation must preserve a non-obvious behavior, not what the next line does. Prefer a concise explanation of the constraint or consequence. If a comment becomes inaccurate when implementation details change but the contract does not, it likely belongs in code or should be removed.
+
+Whatever an inline comment says, do not let it substitute for, or migrate into, the XML documentation on the member it annotates — the strict rule above applies there regardless of what the inline comment nearby says.
+
+## Review Every Comment
+
+For each added or modified **XML documentation** comment, check:
+
+- Would it make sense to a new cloner with no history on this code?
+- Does it explain a useful contract, constraint, reason, or edge case?
+- Does it merely repeat names, types, code, or control flow?
+- Does it expose an implementation detail that is not part of the contract?
+- Does it justify a rule by one customer's, partner's, or deal's business terms (margin, surcharge, contract clause, compliance audit) instead of stating the rule itself?
+- Could clearer code remove the need for it?
+- Will it remain accurate as implementation details evolve?
+
+Delete or rewrite XML documentation that fails these checks. Inline comments only need the lighter bar above. See [examples.md](examples.md) for C# examples, including patterns drawn from application code.
