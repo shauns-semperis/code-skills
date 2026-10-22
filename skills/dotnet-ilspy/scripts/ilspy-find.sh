@@ -71,9 +71,18 @@ Usage:
 EOF
 }
 
-require_dnx_ilspycmd() {
-  if ! dnx ilspycmd -- --version >/dev/null 2>&1; then
-    echo "error: 'dnx ilspycmd' is not working. Fall back to 'which ilspycmd' / a global tool install (see SKILL.md)." >&2
+# Prefer `dnx ilspycmd`; fall back to a globally installed `ilspycmd` so the
+# script still works on SDKs without dnx. ILSPY is set once and inherited by
+# the $(...) subshells below.
+ILSPY=()
+require_ilspycmd() {
+  [ "${#ILSPY[@]}" -gt 0 ] && return 0
+  if command -v dnx >/dev/null 2>&1 && dnx ilspycmd -- --version >/dev/null 2>&1; then
+    ILSPY=(dnx ilspycmd --)
+  elif command -v ilspycmd >/dev/null 2>&1; then
+    ILSPY=(ilspycmd)
+  else
+    echo "error: neither 'dnx ilspycmd' nor a global 'ilspycmd' works. Install one: 'dotnet tool install --global ilspycmd' (see SKILL.md)." >&2
     exit 1
   fi
 }
@@ -120,7 +129,7 @@ decompile_type() {
     echo "# Reusing cached decompile of $type_name at: $tmp" >&2
   else
     mkdir -p "$cache_root"
-    dnx ilspycmd -- -t "$type_name" "$assembly" > "$tmp"
+    "${ILSPY[@]}" -t "$type_name" "$assembly" > "$tmp"
     echo "# Full decompiled type saved to: $tmp" >&2
   fi
   printf '%s' "$tmp"
@@ -141,7 +150,7 @@ decompile_assembly_cached() {
   else
     rm -rf "$dir"
     mkdir -p "$dir"
-    dnx ilspycmd -- -p -o "$dir" "$assembly" >/dev/null
+    "${ILSPY[@]}" -p -o "$dir" "$assembly" >/dev/null
     echo "# Decompiled whole assembly (one file per type) to: $dir" >&2
   fi
   printf '%s' "$dir"
@@ -199,8 +208,8 @@ case "$cmd" in
   list)
     assembly="${2:?assembly.dll required}"
     pattern="${3:?name-pattern required}"
-    require_dnx_ilspycmd
-    all_types="$(dnx ilspycmd -- -l c "$assembly")"
+    require_ilspycmd
+    all_types="$("${ILSPY[@]}" -l c "$assembly")"
     types_out="$(list_filter "$all_types" "$pattern")" || {
       echo "# No type name matched '$pattern'." >&2
       exit 1
@@ -212,7 +221,7 @@ case "$cmd" in
     type_name="${3:?type-name required}"
     pattern="${4:?search-pattern required}"
     context="${5:-15}"
-    require_dnx_ilspycmd
+    require_ilspycmd
     tmp="$(decompile_type "$assembly" "$type_name")"
     match_out="$(context_search "$pattern" "$context" "$tmp")" || {
       echo "# No match for '$pattern' in $type_name. Full type is at $tmp — read that directly if the method exists under a different name." >&2
@@ -224,14 +233,14 @@ case "$cmd" in
     assembly="${2:?assembly.dll required}"
     type_name="${3:?type-name required}"
     lines="${4:-60}"
-    require_dnx_ilspycmd
+    require_ilspycmd
     tmp="$(decompile_type "$assembly" "$type_name")"
     head -n "$lines" "$tmp"
     ;;
   api)
     assembly="${2:?assembly.dll required}"
     type_name="${3:?type-name required}"
-    require_dnx_ilspycmd
+    require_ilspycmd
     tmp="$(decompile_type "$assembly" "$type_name")"
     grep -nE '^[[:space:]]*(public|protected|internal)[[:space:]]' "$tmp" | cap_output
     ;;
@@ -239,7 +248,7 @@ case "$cmd" in
     assembly="${2:?assembly.dll required}"
     pattern="${3:?search-pattern required}"
     context="${4:-10}"
-    require_dnx_ilspycmd
+    require_ilspycmd
     dir="$(decompile_assembly_cached "$assembly")"
     match_out="$(context_search "$pattern" "$context" "$dir")" || {
       echo "# No match for '$pattern' anywhere in the assembly. Decompiled project is at $dir if you want to search it differently." >&2
@@ -250,7 +259,7 @@ case "$cmd" in
   refs)
     assembly="${2:?assembly.dll required}"
     ident="${3:?identifier-name required}"
-    require_dnx_ilspycmd
+    require_ilspycmd
     dir="$(decompile_assembly_cached "$assembly")"
     if ! command -v dotnet >/dev/null 2>&1; then
       echo "error: 'dotnet' is required for refs (runs a small Roslyn-based C# app)." >&2

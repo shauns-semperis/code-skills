@@ -20,6 +20,8 @@ If `dnx` isn't available (older SDK), fall back in this order:
 1. `which ilspycmd` — check whether the tool is already installed globally
 2. If not found, `dotnet tool install --global ilspycmd`, then call `ilspycmd` directly
 
+`scripts/ilspy-find.sh` (below) does this detection itself: it uses `dnx ilspycmd` when that works, otherwise a global `ilspycmd`, so the fallback needs no extra steps there.
+
 > Note: ILSpyCmd options may vary slightly by version.  
 > Always verify supported flags with `dnx ilspycmd -- -h`.
 
