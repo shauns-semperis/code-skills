@@ -9,6 +9,7 @@ description: >-
   experiment, or when the user says "in C#", "use C#", or names a NuGet package
   for a one-off. Requires C# to be named or clearly intended; a language-agnostic
   scratch task (plain "generate some test data") is not enough on its own.
+allowed-tools: Bash(dotnet run *.cs*), Bash(dotnet run -*), Bash(dotnet --version), Bash(dotnet --list-sdks)
 ---
 
 # C# Scripting with .NET 10 File-Based Apps
