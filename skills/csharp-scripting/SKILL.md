@@ -1,6 +1,14 @@
 ---
 name: csharp-scripting
-description: Runs throwaway C# as a .NET 10 file-based app (a single `.cs` file with `#:package` directives, run via `dotnet run file.cs`) instead of scaffolding a `dotnet new` project. Use whenever C# is the chosen tool for something trivial you'd otherwise spin up a csproj for, including inside an existing project: checking how a C# API behaves, generating sample data in C#, a quick C# experiment, or when the user says "in C#", "use C#", or names a NuGet package for a one-off. Requires C# to be named or clearly intended; a language-agnostic scratch task (plain "generate some test data") is not enough on its own.
+description: >-
+  Runs throwaway C# as a .NET 10 file-based app (a single `.cs` file with
+  `#:package` directives, run via `dotnet run file.cs`) instead of scaffolding a
+  `dotnet new` project. Use whenever C# is the chosen tool for something trivial
+  you'd otherwise spin up a csproj for, including inside an existing project:
+  checking how a C# API behaves, generating sample data in C#, a quick C#
+  experiment, or when the user says "in C#", "use C#", or names a NuGet package
+  for a one-off. Requires C# to be named or clearly intended; a language-agnostic
+  scratch task (plain "generate some test data") is not enough on its own.
 ---
 
 # C# Scripting with .NET 10 File-Based Apps
