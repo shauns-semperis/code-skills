@@ -1,0 +1,2 @@
+payco-sdk==4.2.1
+pyyaml==6.0.2

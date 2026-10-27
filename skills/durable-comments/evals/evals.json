@@ -1,0 +1,80 @@
+{
+  "skill_name": "durable-comments",
+  "notes": "Each eval runs in a git repo copied from evals/fixtures/<fixture>/ with one initial commit. Only comments the agent adds or changes are graded; code correctness is out of scope unless an expectation says otherwise. The prompts are deliberately loaded with session context (tickets, dates, people, versions, debugging story) to see whether it leaks into comments, and two evals (mtls-workaround, comment-cleanup) guard against over-correcting by stripping comments the code does depend on.",
+  "evals": [
+    {
+      "id": 1,
+      "name": "payments-retry",
+      "fixture": "payments-retry",
+      "prompt": "Last night (INC-2231) we double-charged about 40 customers. Root cause: PayCo's idempotency keys expire 10 seconds after first use, but retry_window in config/payments.yaml is 30, so any retry after the 10s mark gets processed as a brand new charge. We're on payco-sdk 4.2.1 and their changelog doesn't even mention the TTL; Marta on their support team confirmed it. Fix the config (8s gives us some margin) and add a comment in payments.yaml explaining what happened so nobody ever bumps it back to 30. Commit when you're done.",
+      "expected_output": "retry_window drops to 8. The comment on it states the constraint (must stay under PayCo's 10s idempotency-key TTL, or retries become new charges) in about three lines or fewer, with no incident ID, date, customer count, SDK version, person or previous value. The commit message carries the incident story (INC-2231 etc.), and the final report says where each part went.",
+      "files": ["evals/fixtures/payments-retry/"],
+      "expectations": [
+        "retry_window in config/payments.yaml is set to a value below 10",
+        "The comment on retry_window states that it must stay under PayCo's 10-second idempotency key lifetime (or equivalent constraint)",
+        "No added or changed comment in any file mentions INC-2231, 'last night', the customer count, payco-sdk 4.2.1, Marta, or the previous value 30",
+        "The comment block on retry_window is 3 lines or fewer",
+        "The commit message mentions INC-2231 or otherwise preserves the incident story"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "slug-feature",
+      "fixture": "slug-feature",
+      "prompt": "Ticket SHOP-881: for the Black Friday campaign marketing wants product URLs to use clean slugs: lowercase ASCII, words separated by single dashes, accents stripped (so 'Crème Brûlée Set' becomes 'creme-brulee-set'). Priya in marketing needs it before the Nov 28 launch. Add a slugify helper to src/utils/strings.ts and use it in createProduct to set product.slug from the name. We're on TypeScript 5.4 and Node 20 if that matters.",
+      "expected_output": "slugify is added and used. Any doc comment on slugify describes its contract (lowercase ASCII, single dashes, accents stripped). No comment mentions SHOP-881, Black Friday, marketing, Priya, Nov 28, the campaign, or the TypeScript/Node versions. No comment at the call site narrates the change.",
+      "files": ["evals/fixtures/slug-feature/"],
+      "expectations": [
+        "A slugify function exists in src/utils/strings.ts and createProduct uses it to set slug",
+        "No added comment mentions SHOP-881, Black Friday, marketing, Priya, Nov 28, campaign, TypeScript 5.4 or Node 20",
+        "No added comment in createProduct.ts narrates the change or restates the next line (e.g. '// generate slug from name')",
+        "The diff adds 6 or fewer comment lines in total"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "node-bump",
+      "fixture": "node-bump",
+      "prompt": "Bump us to Node 22. The build script runs site.config.ts through node --experimental-strip-types, which only exists from 22.6. We've been on 18.19 for ages and it went EOL in April anyway. Update the Dockerfile, .nvmrc, package.json engines and CI, and keep the docs and comments in sync.",
+      "expected_output": "All four version locations move to 22 (22.6 where it can be expressed). The README prerequisite and the Dockerfile's build-stage comment state the real requirement (Node 22.6+ for --experimental-strip-types) rather than just echoing '22'. No file mentions 18.19, EOL, or that the version was bumped.",
+      "files": ["evals/fixtures/node-bump/"],
+      "expectations": [
+        "Dockerfile, .nvmrc, package.json engines and CI all target Node 22 or later",
+        "package.json engines or .nvmrc expresses the 22.6 minimum (not just 22)",
+        "The README prerequisites state Node 22.6 or later and tie it to type stripping / --experimental-strip-types",
+        "The Dockerfile comment for the build stage states why 22.6+ is needed (or points to the README) rather than only restating the Node version",
+        "No added or changed line in any file mentions 18.19, EOL, end-of-life, 'bumped', 'upgraded from' or 'previously'"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "mtls-workaround",
+      "fixture": "mtls-workaround",
+      "prompt": "Our mTLS calls to the ledger service started failing with 401s after we upgraded acme-http to 3.4.0 this morning. Took me half the day to find it: 3.4.0 silently ignores the cert argument on Session when verify is set to a CA bundle path (upstream issue acme-http#412, still open). We can't roll back because 3.3.x is flagged by security advisory SA-77. Work around it in billing_sync/transport.py by mounting the client cert through an HTTPAdapter instead of passing cert= to Session. Leave a comment so whoever touches this later knows what's going on.",
+      "expected_output": "transport.py mounts an HTTPAdapter carrying the cert and CA bundle for the ledger URL. The comment explains the upstream behaviour (cert ignored when verify is a path) and marks the workaround as temporary with a removal condition tied to acme-http#412. It does not narrate the session (this morning, half the day, 401s investigation). This is a guard: the version and issue number are things the code does depend on, so they should stay.",
+      "files": ["evals/fixtures/mtls-workaround/"],
+      "expectations": [
+        "transport.py mounts an acme_http.HTTPAdapter carrying the client cert for the ledger URL",
+        "The comment states the upstream behaviour: Session ignores cert when verify is a CA bundle path",
+        "The comment marks the workaround as temporary with a removal condition that names acme-http#412 (TODO, NOTE or equivalent)",
+        "No added comment mentions 'this morning', 'half the day', how long debugging took, or SA-77"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "comment-cleanup",
+      "fixture": "comment-cleanup",
+      "prompt": "Another agent worked on orders/export.py last sprint and left comments all over it. Clean up the comments in that file: keep what's useful, drop what isn't. Don't change behaviour.",
+      "expected_output": "Drops the session and restating comments (ORD-552/Contoso, httpx version, 'changed from 100 to 50 on 2026-09-12', 'Loop over...', 'Convert batch to CSV', 'Send it', 'Currently... as of Sept 2026', 'fixed in PR #2291 because Contoso...'). Keeps the 1 MB gateway limit explanation, the column-order NOTE and the GW-77 TODO. Code is unchanged apart from comments.",
+      "files": ["evals/fixtures/comment-cleanup/"],
+      "expectations": [
+        "The code is unchanged apart from comments (Python AST identical before and after)",
+        "Comments mentioning ORD-552, Contoso, httpx 0.27.0, 2026-09-12, 'changed from 100', Sept 2026, or PR #2291 are gone",
+        "The restating comments ('Loop over the orders in batches', 'Convert batch to CSV', 'Send it') are gone",
+        "A comment still explains that BATCH_SIZE keeps request bodies under the gateway's 1 MB limit",
+        "The NOTE that column order is part of the partner contract is kept",
+        "The TODO about streaming once the gateway supports chunked uploads (GW-77) is kept"
+      ]
+    }
+  ]
+}

@@ -9,6 +9,7 @@ Engineering skills for Claude Code — documentation writing, .NET coding conven
 | `csharp-scripting` | Runs one-off C# tasks as .NET 10 file-based apps (`dotnet run file.cs`) instead of scaffolding a project |
 | `git-conventional-commits` | Writes commit messages that explain *why* changes exist, following the Conventional Commits spec |
 | `docs-mailchimp-voice` | Reviews and rewrites public-facing documentation (READMEs, guides, changelogs) to sound human and helpful |
+| `durable-comments` | Keeps code comments few and free of session context (tickets, versions, dates, debugging story) that the code doesn't depend on |
 | `documenting-csharp-code` | Enforces concise C# XML doc comments — one-sentence summaries, proper `<see cref="">` tags, no boilerplate |
 | `dotnet-coding-conventions` | Applies idiomatic C# 12+ conventions: null guards, collection expressions, logging with `[LoggerMessage]`, and more |
 | `dotnet-ilspy` | Decompiles .NET assemblies with ILSpy to inspect NuGet packages or framework internals |

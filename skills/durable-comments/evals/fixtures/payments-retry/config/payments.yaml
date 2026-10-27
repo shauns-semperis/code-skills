@@ -1,0 +1,10 @@
+# PayCo gateway client settings. Read once at startup by payments/client.py.
+payco:
+  base_url: https://api.payco.example/v2
+  # Seconds before a single request is abandoned.
+  request_timeout: 5
+  # Total seconds the client keeps retrying a failed charge before giving up.
+  retry_window: 30
+  # Delay before the first retry; doubles on each attempt.
+  retry_backoff: 0.5
+  max_attempts: 6
